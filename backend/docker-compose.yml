@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: logiflow_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://logiflow_user:logiflow_secret_password@postgres:5432/logiflow_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=generate_a_very_secure_secret_key_in_production
+      - API_V1_STR=/api/v1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - upload_data:/app/uploads
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: logiflow_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=logiflow_user
+      - POSTGRES_PASSWORD=logiflow_secret_password
+      - POSTGRES_DB=logiflow_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logiflow_user -d logiflow_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: logiflow_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  upload_data:
