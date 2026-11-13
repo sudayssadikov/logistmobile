@@ -2,10 +2,8 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 enum UserRole {
-  shipper('shipper', 'Yuk beruvchi (Shipper)', 'Post loads, manage escrow, track freight'),
-  carrier('carrier', 'Tashuvchi (Carrier)', 'Browse load board, manage fleet, submit bids'),
-  driver('driver', 'Haydovchi (Driver)', 'Navigate routes, update shipment status, sign POD'),
-  admin('admin', 'Tizim Administratori (Admin)', 'Global control tower, fleet telemetry, system oversight');
+  shipper('shipper', 'Yuk beruvchi', 'Post loads, manage escrow, track freight'),
+  driver('driver', 'Haydovchi', 'Navigate routes, accept freight, deliver loads');
 
   final String key;
   final String defaultTitle;
@@ -26,10 +24,11 @@ enum UserRole {
   }
 
   static UserRole fromKey(String? key) {
-    return UserRole.values.firstWhere(
-      (e) => e.key.toLowerCase() == key?.toLowerCase(),
-      orElse: () => UserRole.shipper,
-    );
+    final normalized = key?.toLowerCase();
+    if (normalized == 'driver' || normalized == 'truck_driver') {
+      return UserRole.driver;
+    }
+    return UserRole.shipper;
   }
 }
 

@@ -3,6 +3,17 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_tracking_and_pod_submission(client: AsyncClient):
+    # Register Shipper
+    s_resp = await client.post("/api/v1/auth/register", json={
+        "fullName": "GPS Shipper",
+        "email": "shipper_gps@test.uz",
+        "phone": "+998909998870",
+        "password": "Password123!",
+        "role": "shipper",
+    })
+    s_token = s_resp.json()["data"]["access_token"]
+    s_headers = {"Authorization": f"Bearer {s_token}"}
+
     # Register Driver
     d_resp = await client.post("/api/v1/auth/register", json={
         "fullName": "GPS Driver",
@@ -15,7 +26,7 @@ async def test_tracking_and_pod_submission(client: AsyncClient):
     d_headers = {"Authorization": f"Bearer {d_token}"}
 
     # Create load directly
-    create_resp = await client.post("/api/v1/loads", json={
+    create_resp = await client.post("/api/v1/shipments", json={
         "origin": {"city": "Tashkent", "address": "Gate 1", "latitude": 41.29, "longitude": 69.24},
         "destination": {"city": "Navoiy", "address": "Terminal 2", "latitude": 40.08, "longitude": 65.37},
         "cargoTitle": "Industrial Pumps",
@@ -23,7 +34,8 @@ async def test_tracking_and_pod_submission(client: AsyncClient):
         "weightTons": 14.0,
         "volumeM3": 50.0,
         "price": 12000000.0,
-    }, headers=d_headers)
+    }, headers=s_headers)
+    assert create_resp.status_code == 201
     shipment_id = create_resp.json()["data"]["id"]
 
     # Send GPS update
@@ -68,7 +80,7 @@ async def test_chat_messaging(client: AsyncClient):
     headers = {"Authorization": f"Bearer {token}"}
 
     # Create load to get channel
-    create_resp = await client.post("/api/v1/loads", json={
+    create_resp = await client.post("/api/v1/shipments", json={
         "origin": {"city": "Tashkent", "address": "Hub"},
         "destination": {"city": "Samarkand", "address": "Hub"},
         "cargoTitle": "Chat Test Load",
@@ -77,6 +89,7 @@ async def test_chat_messaging(client: AsyncClient):
         "volumeM3": 20.0,
         "price": 5000000.0,
     }, headers=headers)
+    assert create_resp.status_code == 201
     shipment_id = create_resp.json()["data"]["id"]
 
     # Send message in shipment channel

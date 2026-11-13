@@ -45,7 +45,12 @@ import '../../features/tracking/presentation/bloc/navigation_bloc.dart';
 import '../../features/wallet_escrow/data/repositories/wallet_repository_impl.dart';
 import '../../features/wallet_escrow/domain/repositories/wallet_repository.dart';
 import '../../features/wallet_escrow/presentation/bloc/wallet_bloc.dart';
+import '../../features/shipper/data/repositories/loads_repository_impl.dart';
+import '../../features/shipper/data/services/load_draft_service.dart';
+import '../../features/shipper/domain/repositories/loads_repository.dart';
 import '../localization/app_localizations.dart';
+import '../map/map_provider.dart';
+import '../map/osm_map_provider.dart';
 import '../network/dio_client.dart';
 import '../network/websocket_service.dart';
 import '../storage/local_storage_service.dart';
@@ -73,6 +78,9 @@ Future<void> configureDependencies() async {
   getIt.registerSingleton<OfflineSyncManager>(offlineSync);
 
   // Native & Free Services
+  getIt.registerLazySingleton<LoadDraftService>(() => LoadDraftService(getIt<ILocalStorageService>()));
+  getIt.registerLazySingleton<ILoadsRepository>(() => LoadsRepositoryImpl(getIt<DioClient>()));
+  getIt.registerLazySingleton<IMapProvider>(() => OsmMapProvider());
   getIt.registerLazySingleton<OsrmRoutingService>(() => OsrmRoutingService());
   getIt.registerLazySingleton<DeviceLocationService>(() => DeviceLocationService());
   getIt.registerLazySingleton<MediaPickerService>(() => MediaPickerService());

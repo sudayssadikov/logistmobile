@@ -18,6 +18,7 @@ from app.services.wallet_service import WalletService
 router = APIRouter(tags=["Wallet & Escrow"])
 
 @router.get("/wallet", response_model=ApiResponse[WalletModel])
+@router.get("/wallet/summary", response_model=ApiResponse[WalletModel])
 async def get_wallet(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

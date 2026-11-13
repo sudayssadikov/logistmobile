@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.models.chat import ChatChannel, ChatMessage
+from app.models.shipment import Shipment
 from app.repositories.base import BaseRepository
 
 class ChatRepository(BaseRepository[ChatChannel]):
@@ -12,7 +13,7 @@ class ChatRepository(BaseRepository[ChatChannel]):
     async def get_by_shipment_id(self, shipment_id: str) -> Optional[ChatChannel]:
         stmt = (
             select(ChatChannel)
-            .options(selectinload(ChatChannel.messages))
+            .options(selectinload(ChatChannel.messages), selectinload(ChatChannel.shipment))
             .where(ChatChannel.shipment_id == shipment_id)
         )
         result = await self.session.execute(stmt)
@@ -21,7 +22,14 @@ class ChatRepository(BaseRepository[ChatChannel]):
     async def get_channels_for_user(self, user_id: str) -> List[ChatChannel]:
         stmt = (
             select(ChatChannel)
-            .options(selectinload(ChatChannel.messages))
+            .join(Shipment, ChatChannel.shipment_id == Shipment.id)
+            .options(selectinload(ChatChannel.messages), selectinload(ChatChannel.shipment))
+            .where(
+                (Shipment.shipper_id == user_id) | (Shipment.carrier_id == user_id) | (Shipment.driver_id == user_id)
+            )
+            .where(
+                Shipment.carrier_id.isnot(None) | Shipment.driver_id.isnot(None)
+            )
             .order_by(ChatChannel.last_message_time.desc())
         )
         result = await self.session.execute(stmt)

@@ -1,8 +1,8 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enums import LoadStatus
-from app.dependencies.auth import get_current_user, get_optional_current_user
+from app.core.enums import LoadStatus, UserRole
+from app.dependencies.auth import get_current_user, get_optional_current_user, require_role
 from app.dependencies.db import get_db
 from app.models.user import User
 from app.schemas.bid import CounterBidRequest, SubmitBidRequest
@@ -22,7 +22,6 @@ from app.services.shipment_service import ShipmentService
 router = APIRouter(tags=["Freight & Shipments"])
 
 # /loads endpoint (matching Flutter ApiEndpoints.loads)
-@router.get("/loads", response_model=ApiResponse[List[ShipmentModel]])
 @router.get("/shipments", response_model=ApiResponse[List[ShipmentModel]])
 async def list_shipments(
     role: Optional[str] = None,
@@ -37,7 +36,6 @@ async def list_shipments(
     results = await service.get_shipments(role=user_role, user_id=user_id, search_query=q, filter_status=status)
     return ApiResponse(data=results)
 
-@router.get("/loads/{shipment_id}", response_model=ApiResponse[ShipmentModel])
 @router.get("/shipments/{shipment_id}", response_model=ApiResponse[ShipmentModel])
 async def get_shipment_details(
     shipment_id: str,
@@ -47,11 +45,10 @@ async def get_shipment_details(
     result = await service.get_shipment_by_id(shipment_id)
     return ApiResponse(data=result)
 
-@router.post("/loads", response_model=ApiResponse[ShipmentModel], status_code=status.HTTP_201_CREATED)
 @router.post("/shipments", response_model=ApiResponse[ShipmentModel], status_code=status.HTTP_201_CREATED)
 async def create_load(
     req: CreateShipmentRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.SHIPPER)),
     db: AsyncSession = Depends(get_db),
 ):
     service = ShipmentService(db)
@@ -75,6 +72,41 @@ async def update_load_status(
         comments=req.comments,
     )
     return ApiResponse(data=result, message=f"Status advanced to {req.next_status.value}")
+
+# Escrow Lifecycle Endpoints
+@router.post("/loads/{shipment_id}/escrow/fund", response_model=ApiResponse[Any])
+@router.post("/shipments/{shipment_id}/escrow/fund", response_model=ApiResponse[Any])
+async def fund_load_escrow(
+    shipment_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = EscrowService(db)
+    result = await service.fund_escrow(current_user.id, shipment_id)
+    return ApiResponse(data=result, message="Funds locked in escrow successfully")
+
+@router.post("/loads/{shipment_id}/escrow/release", response_model=ApiResponse[bool])
+@router.post("/shipments/{shipment_id}/escrow/release", response_model=ApiResponse[bool])
+async def release_load_escrow(
+    shipment_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = EscrowService(db)
+    result = await service.release_escrow(shipment_id, current_user.id)
+    return ApiResponse(data=result, message="Escrow funds released to carrier wallet")
+
+@router.post("/loads/{shipment_id}/escrow/refund", response_model=ApiResponse[bool])
+@router.post("/shipments/{shipment_id}/escrow/refund", response_model=ApiResponse[bool])
+async def refund_load_escrow(
+    shipment_id: str,
+    reason: str = "Cancellation refund",
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = EscrowService(db)
+    result = await service.refund_escrow(shipment_id, current_user.id, reason=reason)
+    return ApiResponse(data=result, message="Escrow funds refunded to shipper")
 
 # Bidding Endpoints
 @router.post("/loads/{shipment_id}/bids", response_model=ApiResponse[ShipmentModel])

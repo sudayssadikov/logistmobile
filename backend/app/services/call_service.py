@@ -3,8 +3,9 @@ from typing import List, Optional
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums import CallDirection, CallStatus, CallType, UserRole
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, PermissionDeniedError
 from app.models.call import CallLog, CallSession
+from app.models.shipment import Shipment
 from app.repositories.base import BaseRepository
 from app.repositories.user_repo import UserRepository
 from app.schemas.call import CallLogModel, CallSessionModel, InitiateCallRequest, UpdateCallStatusRequest
@@ -21,6 +22,17 @@ class CallService:
         receiver = await self.user_repo.get_by_id(req.receiver_id)
         if not caller or not receiver:
             raise NotFoundError("Caller or receiver user not found.")
+
+        if req.shipment_id:
+            stmt = select(Shipment).where(Shipment.id == req.shipment_id)
+            res = await self.session.execute(stmt)
+            shipment = res.scalar_one_or_none()
+            if not shipment:
+                raise NotFoundError("Yuk topilmadi.")
+            if caller_id not in (shipment.shipper_id, shipment.carrier_id, shipment.driver_id):
+                raise PermissionDeniedError("Faqat ushbu yuk ishtirokchilari qo'ng'iroq qilishi mumkin.")
+            if not shipment.is_escrow_funded:
+                raise PermissionDeniedError("Qo'ng'iroq qilish uchun avval to'lov (escrow) amalga oshirilishi shart.")
 
         call = CallSession(
             caller_id=caller.id,
@@ -187,7 +199,7 @@ class CallService:
             CallLogModel(
                 id="CALL-HIST-2",
                 participantName="Trans Logistics Dispatcher",
-                participantRole=UserRole.CARRIER,
+                participantRole=UserRole.SHIPPER,
                 participantPhone="+998 90 333 44 55",
                 type=CallType.VIDEO,
                 direction=CallDirection.OUTGOING,

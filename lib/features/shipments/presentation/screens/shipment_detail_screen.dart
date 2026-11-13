@@ -159,64 +159,116 @@ class ShipmentDetailScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             const Divider(),
+                            // Escrow 4-State Visualization & Breakdown Card
                             Builder(builder: (context) {
                               final role = context.watch<AuthBloc>().state.user?.role;
-                              if (role == UserRole.carrier || role == UserRole.driver) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8, bottom: 8),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? AppColors.darkSurface : AppColors.lightSurfaceElevated,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              final isReleased = shipment.status == LoadStatus.completedPayoutReleased;
+                              final isCancelled = shipment.status == LoadStatus.cancelled;
+                              final isHeld = shipment.isEscrowFunded && !isReleased && !isCancelled;
+                              final isPending = !shipment.isEscrowFunded && !isCancelled;
+
+                              Color escrowColor = AppColors.amber;
+                              String escrowTitle = 'Kutilmoqda';
+                              String escrowDesc = 'Escrow to\'lovi kutilmoqda. Haydovchi tayinlangach to\'lanadi.';
+                              IconData escrowIcon = Icons.lock_open_rounded;
+
+                              if (isHeld) {
+                                escrowColor = AppColors.emerald;
+                                escrowTitle = 'Muzlatilgan (Escrow)';
+                                escrowDesc = 'Pul xavfsiz saqlanmoqda. Yuk yetkazilgunga qadar platforma kafolatida.';
+                                escrowIcon = Icons.lock_rounded;
+                              } else if (isReleased) {
+                                escrowColor = AppColors.primaryBlue;
+                                escrowTitle = 'Qo\'yib yuborildi';
+                                escrowDesc = 'To\'lov o\'tkazildi. Haydovchiga sof summa o\'tkazildi.';
+                                escrowIcon = Icons.check_circle_rounded;
+                              } else if (isCancelled) {
+                                escrowColor = AppColors.rose;
+                                escrowTitle = 'Qaytarildi (0% komissiya)';
+                                escrowDesc = 'Buyurtma bekor qilingan. Mablag\' to\'liq yuk egasiga qaytarildi.';
+                                escrowIcon = Icons.replay_rounded;
+                              }
+
+                              return Container(
+                                margin: const EdgeInsets.only(top: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: escrowColor.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: escrowColor.withValues(alpha: 0.3)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
                                       children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('bidding.platformFee'.tr(), style: const TextStyle(fontSize: 10, color: AppColors.rose, fontWeight: FontWeight.w600)),
-                                            Text('- ${currencyFormatter.format(shipment.effectiveCommission)} UZS', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.rose)),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            Text('bidding.carrierWillReceive'.tr(), style: const TextStyle(fontSize: 10, color: AppColors.emerald, fontWeight: FontWeight.w700)),
-                                            Text('${currencyFormatter.format(shipment.effectiveCarrierPayout)} UZS', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.emerald)),
-                                          ],
+                                        Icon(escrowIcon, size: 18, color: escrowColor),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          escrowTitle,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: escrowColor,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            }),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Icon(
-                                  shipment.isEscrowFunded ? Icons.lock_rounded : Icons.lock_open_rounded,
-                                  size: 16,
-                                  color: shipment.isEscrowFunded ? AppColors.emerald : AppColors.amber,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    shipment.isEscrowFunded
-                                        ? '${'shipments.escrowLocked'.tr()}: ${'shipments.escrowGuaranteeDesc'.tr()}'
-                                        : 'shipments.escrowPending'.tr(),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      escrowDesc,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                      ),
                                     ),
-                                  ),
+                                    const Divider(height: 14),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Komissiya (tashuvchidan):',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                                          ),
+                                        ),
+                                        Text(
+                                          '- ${currencyFormatter.format(shipment.effectiveCommission)} UZS',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.rose,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          role == UserRole.driver ? 'Sizga o\'tkaziladigan sof summa:' : 'Haydovchi sof tushumi:',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${currencyFormatter.format(shipment.effectiveCarrierPayout)} UZS',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.emerald,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              );
+                            }),
                           ],
                         ),
                       ),
@@ -242,8 +294,30 @@ class ShipmentDetailScreen extends StatelessWidget {
                             child: _QuickActionButton(
                               icon: Icons.chat_bubble_outline_rounded,
                               label: 'shipments.directChat'.tr(),
-                              accentColor: AppColors.indigo,
-                              onTap: () => context.push('/chat/${shipment.id}'),
+                              accentColor: (shipment.carrierId == null && shipment.driverId == null)
+                                  ? (isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)
+                                  : AppColors.indigo,
+                              onTap: () {
+                                if (shipment.carrierId == null && shipment.driverId == null) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Chat yopiq'),
+                                      content: const Text(
+                                        'Haydovchi yoki tashuvchi tayinlangandan so\'ng chat avtomatik ochiladi.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Tushundim'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  return;
+                                }
+                                context.push('/chat/${shipment.id}');
+                              },
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -394,13 +468,55 @@ class ShipmentDetailScreen extends StatelessWidget {
                                             color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                                           ),
                                         ),
+                                        if (shipment.driverPhone != null) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            shipment.isEscrowFunded
+                                                ? shipment.driverPhone!
+                                                : '${shipment.driverPhone!.substring(0, (shipment.driverPhone!.length).clamp(0, 4))} *** ** ${(shipment.driverPhone!.length > 2 ? shipment.driverPhone!.substring(shipment.driverPhone!.length - 2) : "")}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontFamily: 'monospace',
+                                              color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),
                                   if (shipment.driverPhone != null)
                                     IconButton(
-                                      icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.emerald),
+                                      icon: Icon(
+                                        Icons.phone_in_talk_rounded,
+                                        color: shipment.isEscrowFunded
+                                            ? AppColors.emerald
+                                            : (isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+                                      ),
                                       onPressed: () {
+                                        if (!shipment.isEscrowFunded) {
+                                          showDialog(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: Row(
+                                                children: const [
+                                                  Icon(Icons.security_rounded, color: AppColors.amber),
+                                                  SizedBox(width: 8),
+                                                  Text('Xavfsiz aloqa'),
+                                                ],
+                                              ),
+                                              content: const Text(
+                                                'Haydovchiga qo\'ng\'iroq qilish va to\'liq raqamni ko\'rish faqat to\'lov Escrow hisobiga muzlatilgandan so\'ng yoqiladi.',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(ctx),
+                                                  child: const Text('Tushundim'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text('Calling driver at ${shipment.driverPhone}'),
@@ -484,7 +600,7 @@ class ShipmentDetailScreen extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                if (currentUser.role == UserRole.shipper || currentUser.role == UserRole.admin)
+                                if (currentUser.role == UserRole.shipper)
                                   AppButton(
                                     text: 'actions.acceptSelectedBid'.tr(),
                                     height: 36,
@@ -531,17 +647,23 @@ class ShipmentDetailScreen extends StatelessWidget {
                             text: shipment.status.getActionTitle(currentUser.role),
                             suffixIcon: Icons.arrow_forward_rounded,
                             onPressed: () {
-                              context.read<ShipmentBloc>().add(
-                                    AdvanceShipmentStatusSubmitted(
-                                      shipmentId: shipment.id,
-                                      nextStatus: nextStatus,
-                                      currentRole: currentUser.role,
-                                    ),
-                                  );
+                              if (shipment.status == LoadStatus.carrierAssigned && currentUser.role == UserRole.shipper) {
+                                context.read<ShipmentBloc>().add(
+                                      FundEscrowSubmitted(shipment.id),
+                                    );
+                              } else {
+                                context.read<ShipmentBloc>().add(
+                                      AdvanceShipmentStatusSubmitted(
+                                        shipmentId: shipment.id,
+                                        nextStatus: nextStatus,
+                                        currentRole: currentUser.role,
+                                      ),
+                                    );
+                              }
                             },
                           ),
                         )
-                      else if (currentUser.role == UserRole.carrier && shipment.status == LoadStatus.pendingBid)
+                      else if (currentUser.role == UserRole.driver && shipment.status == LoadStatus.pendingBid)
                         Expanded(
                           child: AppButton(
                             text: 'shipments.submitBid'.tr(),

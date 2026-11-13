@@ -72,9 +72,7 @@ class _AdminUserDirectoryViewState extends State<AdminUserDirectoryView> {
                       children: [
                         _buildRoleChip('Barchasi', null),
                         const SizedBox(width: 8),
-                        _buildRoleChip('Yuk egalari', UserRole.shipper),
-                        const SizedBox(width: 8),
-                        _buildRoleChip('Tashuvchilar', UserRole.carrier),
+                        _buildRoleChip('Yuk beruvchilar', UserRole.shipper),
                         const SizedBox(width: 8),
                         _buildRoleChip('Haydovchilar', UserRole.driver),
                       ],

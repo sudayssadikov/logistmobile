@@ -53,9 +53,21 @@ class ShipmentRepository(BaseRepository[Shipment]):
         if role == "shipper" and user_id:
             stmt = stmt.where(Shipment.shipper_id == user_id)
         elif role == "driver" and user_id:
-            stmt = stmt.where(or_(Shipment.driver_id == user_id, Shipment.status.in_(["pendingBid", "created"])))
+            stmt = stmt.where(
+                or_(
+                    Shipment.driver_id == user_id,
+                    Shipment.carrier_id == user_id,
+                    Shipment.status.in_(["pendingBid", "created", "ACTIVE", "active"]),
+                )
+            )
         elif role == "carrier" and user_id:
-            stmt = stmt.where(or_(Shipment.carrier_id == user_id, Shipment.status.in_(["pendingBid", "created"])))
+            stmt = stmt.where(
+                or_(
+                    Shipment.carrier_id == user_id,
+                    Shipment.driver_id == user_id,
+                    Shipment.status.in_(["pendingBid", "created", "ACTIVE", "active"]),
+                )
+            )
 
         if filter_status:
             stmt = stmt.where(Shipment.status == filter_status)

@@ -94,7 +94,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           final user = state.user;
-          final isDriver = user?.role == UserRole.driver || user?.role == UserRole.carrier;
+          final isDriver = user?.role == UserRole.driver;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),

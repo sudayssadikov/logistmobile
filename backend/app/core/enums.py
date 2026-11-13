@@ -2,15 +2,24 @@ import enum
 
 class UserRole(str, enum.Enum):
     SHIPPER = "shipper"
-    CARRIER = "carrier"
     DRIVER = "driver"
+
+# Backend va tizim boshqaruvi uchun saqlanadigan boshqa rollar (Admin, Carrier va h.k.)
+class SystemRole(str, enum.Enum):
+    ADMIN = "admin"
+    SUPER_ADMIN = "super_admin"
+    CARRIER = "carrier"
     DISPATCHER = "dispatcher"
     COMPANY_MANAGER = "company_manager"
     COMPANY_OWNER = "company_owner"
-    ADMIN = "admin"
-    SUPER_ADMIN = "super_admin"
 
 class LoadStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    ASSIGNED = "ASSIGNED"
+    IN_TRANSIT = "IN_TRANSIT"
+    DELIVERED = "DELIVERED"
+    CANCELLED = "CANCELLED"
+    # Legacy compatibility
     CREATED = "created"
     PENDING_BID = "pendingBid"
     CARRIER_ASSIGNED = "carrierAssigned"
@@ -18,13 +27,30 @@ class LoadStatus(str, enum.Enum):
     GOING_TO_PICKUP = "goingToPickup"
     ARRIVED_AT_PICKUP = "arrivedAtPickup"
     LOADING = "loading"
-    IN_TRANSIT = "inTransit"
     ARRIVED_AT_DESTINATION = "arrivedAtDestination"
     UNLOADING = "unloading"
-    DELIVERED = "delivered"
     COMPLETED_PAYOUT_RELEASED = "completedPayoutReleased"
-    CANCELLED = "cancelled"
     DISPUTED = "disputed"
+
+class CargoType(str, enum.Enum):
+    OZIQ_OVQAT = "oziq_ovqat"
+    QURILISH_MATERIALLARI = "qurilish_materiallari"
+    MEBEL_MAISHIY = "mebel_maishiy"
+    QISHLOQ_XOJALIGI = "qishloq_xojaligi"
+    KIYIM_TEKSTIL = "kiyim_tekstil"
+    TEXNIKA = "texnika"
+    KIMYO_XAVFLI = "kimyo_xavfli"
+    BOSHQA = "boshqa"
+
+class TruckType(str, enum.Enum):
+    TENT = "TENT"
+    REFRIGERATOR = "REFRIGERATOR"
+    ISOTHERMAL = "ISOTHERMAL"
+    FLATBED = "FLATBED"
+    CONTAINER = "CONTAINER"
+    DUMP = "DUMP"
+    TANKER = "TANKER"
+    OTHER = "OTHER"
 
 class BidNegotiationStatus(str, enum.Enum):
     PENDING = "pending"

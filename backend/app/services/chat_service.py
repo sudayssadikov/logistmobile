@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 import json
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enums import MessageStatus, MessageType, UserRole
-from app.core.exceptions import NotFoundError
+from app.core.enums import LoadStatus, MessageStatus, MessageType, NotificationCategory, UserRole
+from app.core.exceptions import NotFoundError, PermissionDeniedError
 from app.models.chat import ChatChannel, ChatMessage
+from app.models.notification import Notification
 from app.repositories.chat_repo import ChatMessageRepository, ChatRepository
 from app.repositories.user_repo import UserRepository
 from app.schemas.chat import (
@@ -106,6 +107,10 @@ class ChatService:
             channel = await self.chat_repo.get_by_shipment_id(channel_id)
             if channel:
                 target_channel_id = channel.id
+        if channel and channel.shipment:
+            shp = channel.shipment
+            if current_user_id not in (shp.shipper_id, shp.carrier_id, shp.driver_id):
+                raise PermissionDeniedError("Siz bu suhbat ishtirokchisi emassiz.")
         messages = await self.message_repo.get_messages_for_channel(target_channel_id)
         return [self._to_message_model(m, current_user_id) for m in messages]
 
@@ -116,6 +121,15 @@ class ChatService:
             channel = await self.chat_repo.get_by_shipment_id(channel_id)
             if not channel:
                 raise NotFoundError("Chat channel not found.")
+
+        if channel.shipment:
+            shp = channel.shipment
+            if sender_id not in (shp.shipper_id, shp.carrier_id, shp.driver_id):
+                raise PermissionDeniedError("Siz bu suhbat ishtirokchisi emassiz.")
+            if sender_id != shp.shipper_id and not shp.carrier_id and not shp.driver_id:
+                raise PermissionDeniedError("Haydovchi tayinlanmagan yuk bo'yicha chat yopiq.")
+            if shp.status in [LoadStatus.DELIVERED.value, LoadStatus.CANCELLED.value, LoadStatus.COMPLETED_PAYOUT_RELEASED.value]:
+                raise PermissionDeniedError("Yuk yetkazilgan yoki bekor qilingan. Chat faqat o'qish rejimida.")
 
         sender = await self.user_repo.get_by_id(sender_id)
         if not sender:
@@ -143,6 +157,29 @@ class ChatService:
 
         channel.last_message = req.content
         channel.last_message_time = datetime.now(timezone.utc)
+
+        # Notify other participant
+        recipient_id = None
+        if channel.shipment:
+            shp = channel.shipment
+            if sender_id == shp.shipper_id:
+                recipient_id = shp.carrier_id or shp.driver_id
+            else:
+                recipient_id = shp.shipper_id
+
+        if recipient_id:
+            snippet = req.content if len(req.content) <= 60 else (req.content[:57] + "...")
+            self.session.add(
+                Notification(
+                    user_id=recipient_id,
+                    title=f"Yangi xabar ({channel.tracking_code})",
+                    body=f"{sender.full_name}: {snippet}",
+                    category=NotificationCategory.MESSAGES.value,
+                    action_route=f"/chat/{channel.id}",
+                    is_read=False,
+                )
+            )
+
         await self.session.flush()
 
         return self._to_message_model(msg, sender_id)

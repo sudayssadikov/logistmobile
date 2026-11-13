@@ -24,7 +24,7 @@ class _DocumentVaultScreenState extends State<DocumentVaultScreen> {
   @override
   void initState() {
     super.initState();
-    final role = context.read<AuthBloc>().state.user?.role ?? UserRole.carrier;
+    final role = context.read<AuthBloc>().state.user?.role ?? UserRole.driver;
     context.read<DocumentBloc>().add(LoadDocumentsRequested(role));
   }
 
@@ -36,7 +36,7 @@ class _DocumentVaultScreenState extends State<DocumentVaultScreen> {
           fullName: 'Carrier Operator',
           email: 'carrier@logiflow.uz',
           phone: '+998 90 000 00 00',
-          role: UserRole.carrier,
+          role: UserRole.driver,
         );
 
     return Scaffold(

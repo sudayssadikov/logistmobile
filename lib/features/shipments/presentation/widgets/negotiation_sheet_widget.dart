@@ -55,7 +55,7 @@ class _NegotiationSheetWidgetState extends State<NegotiationSheetWidget> {
           fullName: 'Carrier',
           email: 'carrier@logiflow.uz',
           phone: '+998 90 000 00 00',
-          role: UserRole.carrier,
+          role: UserRole.driver,
         );
 
     final bids = widget.shipment.bids;
@@ -297,8 +297,8 @@ class _NegotiationSheetWidgetState extends State<NegotiationSheetWidget> {
 
             const SizedBox(height: 12),
 
-            // Carrier Submit Counter-Offer / Form
-            if (currentUser.role == UserRole.carrier || _isCounterMode) ...[
+            // Driver Submit Counter-Offer / Form
+            if (currentUser.role == UserRole.driver || _isCounterMode) ...[
               const Divider(),
               const SizedBox(height: 12),
               Text(

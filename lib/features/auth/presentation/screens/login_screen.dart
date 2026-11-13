@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/theme/neu_shadows.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../domain/models/user_model.dart';
@@ -18,7 +17,7 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _loginController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneOtpController = TextEditingController();
@@ -84,19 +83,42 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state.status == AuthStatus.authenticated) {
-          context.go('/dashboard');
+        if (state.status == AuthStatus.authenticated && state.user != null) {
+          // Rolga qarab to'g'ri bosh sahifaga yo'naltirish
+          if (state.user!.role == UserRole.shipper) {
+            context.go('/shipper/home');
+          } else {
+            context.go('/driver/loads');
+          }
         } else if (state.status == AuthStatus.otpSent) {
           context.push('/otp-verify', extra: {
             'phone': _phoneOtpController.text,
             'role': _selectedRole,
           });
         } else if (state.status == AuthStatus.error && state.errorMessage != null) {
+          final errorMsg = state.errorMessage!;
+          final isDriverMismatch = errorMsg.contains('haydovchi') || errorMsg.contains('водитель') || errorMsg.contains('driver');
+          final isShipperMismatch = errorMsg.contains('yuk beruvchi') || errorMsg.contains('грузоотправитель') || errorMsg.contains('shipper');
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage!),
+              content: Text(errorMsg),
               backgroundColor: AppColors.rose,
               behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              action: (isDriverMismatch && _selectedRole != UserRole.driver)
+                  ? SnackBarAction(
+                      label: 'roles.driver'.tr(),
+                      textColor: Colors.white,
+                      onPressed: () => setState(() => _selectedRole = UserRole.driver),
+                    )
+                  : (isShipperMismatch && _selectedRole != UserRole.shipper)
+                      ? SnackBarAction(
+                          label: 'roles.shipper'.tr(),
+                          textColor: Colors.white,
+                          onPressed: () => setState(() => _selectedRole = UserRole.shipper),
+                        )
+                      : null,
             ),
           );
         }
@@ -203,124 +225,122 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   ),
                   const SizedBox(height: 20),
 
-                  // Role Selector Grid
-                  Text(
-                    'auth.selectRole'.tr(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                      color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                  // 2 ta SEGMENT TANLASH: "Yuk beruvchi" | "Haydovchi"
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                        width: 1.2,
+                      ),
+                      boxShadow: NeuShadows.elevation(isDark: isDark, blur: 6, offset: 2),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Role Selector (2 Primary Roles: Yuk beruvchi vs Haydovchi/Tashuvchi)
-                  Column(
-                    children: [UserRole.shipper, UserRole.carrier, UserRole.driver, UserRole.admin].map((role) {
-                      final isSelected = _selectedRole == role;
-                      IconData roleIcon;
-                      String roleTitle;
-                      String roleSub;
-                      switch (role) {
-                        case UserRole.shipper:
-                          roleIcon = Icons.inventory_2_outlined;
-                          roleTitle = 'roles.shipperTitle'.tr();
-                          roleSub = 'roles.shipperSubtitle'.tr();
-                          break;
-                        case UserRole.carrier:
-                          roleIcon = Icons.domain_rounded;
-                          roleTitle = 'roles.carrierTitle'.tr();
-                          roleSub = 'roles.carrierSubtitle'.tr();
-                          break;
-                        case UserRole.driver:
-                          roleIcon = Icons.local_shipping_outlined;
-                          roleTitle = 'roles.driverTitle'.tr();
-                          roleSub = 'roles.driverSubtitle'.tr();
-                          break;
-                        case UserRole.admin:
-                          roleIcon = Icons.admin_panel_settings_outlined;
-                          roleTitle = 'roles.adminTitle'.tr();
-                          roleSub = 'roles.adminSubtitle'.tr();
-                          break;
-                      }
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: InkWell(
-                          onTap: () => setState(() => _selectedRole = role),
-                          borderRadius: BorderRadius.circular(12),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary.withValues(alpha: 0.12)
-                                  : (isDark ? AppColors.darkSurface : AppColors.lightSurface),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                                width: isSelected ? 1.8 : 1,
+                    padding: const EdgeInsets.all(4),
+                    child: Row(
+                      children: [
+                        // Segment 1: Yuk beruvchi
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _selectedRole = UserRole.shipper),
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _selectedRole == UserRole.shipper
+                                    ? (isDark ? Colors.white : AppColors.primary)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: _selectedRole == UserRole.shipper
+                                    ? [
+                                        BoxShadow(
+                                          color: (_selectedRole == UserRole.shipper && isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 42,
-                                  height: 42,
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : (isDark ? AppColors.darkSurfaceElevated : AppColors.lightSurfaceElevated),
-                                    borderRadius: BorderRadius.circular(10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.business_center_rounded,
+                                    size: 18,
+                                    color: _selectedRole == UserRole.shipper
+                                        ? (isDark ? Colors.black : Colors.white)
+                                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
                                   ),
-                                  child: Icon(
-                                    roleIcon,
-                                    size: 22,
-                                    color: isSelected ? Colors.white : AppColors.primary,
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'roles.shipper'.tr(),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: _selectedRole == UserRole.shipper ? FontWeight.w700 : FontWeight.w600,
+                                      color: _selectedRole == UserRole.shipper
+                                          ? (isDark ? Colors.black : Colors.white)
+                                          : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        roleTitle,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                          color: isSelected
-                                              ? AppColors.primary
-                                              : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        roleSub,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: AppColors.primary,
-                                    size: 22,
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
+                        // Segment 2: Haydovchi
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _selectedRole = UserRole.driver),
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _selectedRole == UserRole.driver
+                                    ? (isDark ? Colors.white : AppColors.primary)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: _selectedRole == UserRole.driver
+                                    ? [
+                                        BoxShadow(
+                                          color: (_selectedRole == UserRole.driver && isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.local_shipping_rounded,
+                                    size: 18,
+                                    color: _selectedRole == UserRole.driver
+                                        ? (isDark ? Colors.black : Colors.white)
+                                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'roles.driver'.tr(),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: _selectedRole == UserRole.driver ? FontWeight.w700 : FontWeight.w600,
+                                      color: _selectedRole == UserRole.driver
+                                          ? (isDark ? Colors.black : Colors.white)
+                                          : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
 
                   // Auth Method Toggle (Password vs OTP)
                   Container(

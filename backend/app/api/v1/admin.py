@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.settings import settings
-from app.core.enums import UserRole
+from app.core.enums import SystemRole, UserRole
 from app.core.exceptions import EscrowLedgerError, NotFoundError
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/admin", tags=["Admin & System Oversight"])
 
 @router.get("/stats", response_model=ApiResponse[Dict[str, Any]])
 async def get_system_stats(
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     shipment_service = ShipmentService(db)
@@ -88,7 +88,7 @@ async def get_system_stats(
 async def get_admin_users(
     search: Optional[str] = Query(None),
     role: Optional[str] = Query(None),
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(User)
@@ -130,7 +130,7 @@ async def get_admin_users(
 async def toggle_user_status(
     user_id: str,
     req: Dict[str, Any],
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(User).where(User.id == user_id)
@@ -157,7 +157,7 @@ async def toggle_user_status(
 @router.get("/verifications", response_model=ApiResponse[List[Dict[str, Any]]])
 async def get_pending_verifications(
     status: Optional[str] = Query(None),
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Document)
@@ -191,7 +191,7 @@ async def get_pending_verifications(
 async def moderate_verification(
     doc_id: str,
     req: Dict[str, Any],
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Document).where(Document.id == doc_id)
@@ -209,7 +209,7 @@ async def moderate_verification(
 
 @router.get("/escrow-ledger", response_model=ApiResponse[List[Dict[str, Any]]])
 async def get_escrow_ledger(
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(EscrowLock)
@@ -241,7 +241,7 @@ async def get_escrow_ledger(
 async def execute_escrow_intervention(
     lock_id: str,
     req: Dict[str, Any],
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(EscrowLock).where(EscrowLock.id == lock_id)
@@ -270,7 +270,7 @@ async def withdraw_platform_revenue(
     amount: float,
     destination_card_or_account: str,
     notes: str = "Platform revenue dividend withdrawal",
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Wallet).where(Wallet.user_id == "USR-PLATFORM-REVENUE").with_for_update()
@@ -303,7 +303,7 @@ async def withdraw_platform_revenue(
 
 @router.get("/audit-logs", response_model=ApiResponse[List[Dict[str, Any]]])
 async def get_audit_logs(
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
+    current_user: User = Depends(require_role(SystemRole.ADMIN, SystemRole.SUPER_ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     audit_service = AuditService(db)

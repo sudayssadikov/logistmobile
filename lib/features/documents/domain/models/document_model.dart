@@ -12,12 +12,12 @@ enum LogisticsDocType {
   vehicleReg(
     labelKey: 'documents.vehicleReg',
     icon: Icons.directions_car_outlined,
-    targetRole: UserRole.carrier,
+    targetRole: UserRole.driver,
   ),
   cmrInsurance(
     labelKey: 'documents.cmrInsurance',
     icon: Icons.shield_outlined,
-    targetRole: UserRole.carrier,
+    targetRole: UserRole.driver,
   ),
   companyReg(
     labelKey: 'documents.companyReg',
@@ -194,7 +194,7 @@ class DocumentModel extends Equatable {
       rejectionReason: json['rejectionReason'] as String?,
       userRole: UserRole.values.firstWhere(
         (e) => e.name == json['userRole'],
-        orElse: () => UserRole.carrier,
+        orElse: () => UserRole.driver,
       ),
     );
   }

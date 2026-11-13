@@ -14,7 +14,7 @@ class DocumentModel(BaseSchema):
     file_url: Optional[str] = Field(None, alias="fileUrl")
     file_name: Optional[str] = Field(None, alias="fileName")
     rejection_reason: Optional[str] = Field(None, alias="rejectionReason")
-    user_role: str = Field(UserRole.CARRIER.value, alias="userRole")
+    user_role: str = Field(UserRole.DRIVER.value, alias="userRole")
 
 class CreateDocumentRequest(BaseSchema):
     doc_type: LogisticsDocType = Field(..., alias="docType")

@@ -41,10 +41,10 @@ class DriverDashboardView extends StatelessWidget {
       body: BlocBuilder<ShipmentBloc, ShipmentState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            return const SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
-                children: const [
+                children: [
                   NeuSkeleton(width: double.infinity, height: 160, borderRadius: 18),
                   SizedBox(height: 16),
                   NeuSkeleton(width: double.infinity, height: 100, borderRadius: 16),

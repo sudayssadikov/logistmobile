@@ -20,7 +20,7 @@ async def test_shipment_crud_and_bidding_lifecycle(client: AsyncClient):
         "email": "carrier_trans@test.uz",
         "phone": "+998901110002",
         "password": "Password123!",
-        "role": "carrier",
+        "role": "driver",
     })
     carrier_token = carrier_resp.json()["data"]["access_token"]
     carrier_headers = {"Authorization": f"Bearer {carrier_token}"}
@@ -47,7 +47,7 @@ async def test_shipment_crud_and_bidding_lifecycle(client: AsyncClient):
         "distanceKm": 310.0,
         "eta": "4 hours",
     }
-    create_resp = await client.post("/api/v1/loads", json=load_payload, headers=shipper_headers)
+    create_resp = await client.post("/api/v1/shipments", json=load_payload, headers=shipper_headers)
     assert create_resp.status_code == 201
     shipment = create_resp.json()["data"]
     shipment_id = shipment["id"]

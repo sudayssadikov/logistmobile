@@ -19,6 +19,6 @@ class Document(Base, TimestampMixin):
     file_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     file_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     rejection_reason: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
-    user_role: Mapped[str] = mapped_column(String(32), default=UserRole.CARRIER.value, nullable=False)
+    user_role: Mapped[str] = mapped_column(String(32), default=UserRole.DRIVER.value, nullable=False)
 
     user: Mapped["User"] = relationship("User")

@@ -110,7 +110,7 @@ class _PodScreenState extends State<PodScreen> {
         );
 
     // Prompt Return Trip Dialog for drivers
-    if (role == UserRole.driver || role == UserRole.carrier) {
+    if (role == UserRole.driver) {
       showDialog(
         context: context,
         barrierDismissible: false,

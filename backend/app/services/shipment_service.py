@@ -3,8 +3,9 @@ from datetime import datetime, timezone
 import random
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enums import AuditAction, LoadStatus, UserRole
+from app.core.enums import AuditAction, LoadStatus, NotificationCategory, SystemRole, UserRole
 from app.core.exceptions import InvalidStateTransitionError, NotFoundError, PermissionDeniedError
+from app.models.notification import Notification
 from app.models.shipment import Shipment, ShipmentStatusHistory
 from app.models.tracking import TrackingData
 from app.models.chat import ChatChannel
@@ -174,12 +175,12 @@ class ShipmentService:
         )
         self.session.add(tracking)
 
-        # Create associated chat channel
+        # Create chat channel for this shipment
         chat_channel = ChatChannel(
             shipment_id=shipment.id,
             shipment_title=shipment.cargo_title,
             tracking_code=shipment.tracking_code,
-            last_message="Shipment channel initialized.",
+            is_online=True,
         )
         self.session.add(chat_channel)
 
@@ -221,13 +222,13 @@ class ShipmentService:
 
         # Shipper permission transitions
         if next_status == LoadStatus.ESCROW_FUNDED:
-            if user_role not in [UserRole.SHIPPER.value, UserRole.ADMIN.value, UserRole.SUPER_ADMIN.value]:
+            if user_role not in [UserRole.SHIPPER.value, SystemRole.ADMIN.value, SystemRole.SUPER_ADMIN.value]:
                 raise PermissionDeniedError("Only the shipper can fund escrow.")
             shipment.is_escrow_funded = True
 
         # Complete and release escrow
         elif next_status == LoadStatus.COMPLETED_PAYOUT_RELEASED:
-            if user_role not in [UserRole.SHIPPER.value, UserRole.ADMIN.value, UserRole.SUPER_ADMIN.value]:
+            if user_role not in [UserRole.SHIPPER.value, SystemRole.ADMIN.value, SystemRole.SUPER_ADMIN.value]:
                 raise PermissionDeniedError("Only the shipper or admin can release completed payout.")
 
         # Driver transit transitions
@@ -240,8 +241,8 @@ class ShipmentService:
             LoadStatus.UNLOADING,
             LoadStatus.DELIVERED,
         ]:
-            if user_role not in [UserRole.DRIVER.value, UserRole.CARRIER.value, UserRole.ADMIN.value, UserRole.SUPER_ADMIN.value]:
-                raise PermissionDeniedError("Only the assigned driver/carrier can update transit progress.")
+            if user_role not in [UserRole.DRIVER.value, SystemRole.ADMIN.value, SystemRole.SUPER_ADMIN.value]:
+                raise PermissionDeniedError("Only the assigned driver can update transit progress.")
 
         shipment.status = next_status.value
 
@@ -262,6 +263,43 @@ class ShipmentService:
             user_id=user_id,
             changes=f"Status changed from {prev_status} to {next_status.value}",
         )
+
+        # Notify participants on key milestones
+        if next_status == LoadStatus.IN_TRANSIT and shipment.shipper_id:
+            self.session.add(
+                Notification(
+                    user_id=shipment.shipper_id,
+                    title="Yuk yo'lga chiqdi",
+                    body=f"{shipment.tracking_code} yuki haydovchi tomonidan olib ketildi va yo'lga chiqdi.",
+                    category=NotificationCategory.SHIPMENTS.value,
+                    action_route=f"/shipments/{shipment.id}",
+                    is_read=False,
+                )
+            )
+        elif next_status == LoadStatus.DELIVERED and shipment.shipper_id:
+            self.session.add(
+                Notification(
+                    user_id=shipment.shipper_id,
+                    title="Yuk yetkazildi",
+                    body=f"{shipment.tracking_code} yuki manzilga yetkazildi. Iltimos, tekshirib to'lovni tasdiqlang.",
+                    category=NotificationCategory.SHIPMENTS.value,
+                    action_route=f"/shipments/{shipment.id}",
+                    is_read=False,
+                )
+            )
+        elif next_status == LoadStatus.CANCELLED:
+            target_id = shipment.carrier_id if user_id == shipment.shipper_id else shipment.shipper_id
+            if target_id:
+                self.session.add(
+                    Notification(
+                        user_id=target_id,
+                        title="Yuk bekor qilindi",
+                        body=f"{shipment.tracking_code} yuki bekor qilindi.",
+                        category=NotificationCategory.SHIPMENTS.value,
+                        action_route=f"/shipments/{shipment.id}",
+                        is_read=False,
+                    )
+                )
 
         await self.session.flush()
         return await self.get_shipment_by_id(shipment.id)

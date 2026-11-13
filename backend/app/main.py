@@ -62,12 +62,13 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 def create_application() -> FastAPI:
+    is_prod = settings.ENVIRONMENT.lower() == "production"
     application = FastAPI(
         title=settings.PROJECT_NAME,
         version=settings.VERSION,
-        openapi_url=f"{settings.API_V1_STR}/openapi.json",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        openapi_url=None if is_prod else f"{settings.API_V1_STR}/openapi.json",
+        docs_url=None if is_prod else "/docs",
+        redoc_url=None if is_prod else "/redoc",
         lifespan=lifespan,
     )
 
@@ -110,6 +111,8 @@ def create_application() -> FastAPI:
             headers=exc.headers,
         )
 
+    from fastapi.encoders import jsonable_encoder
+
     @application.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         return JSONResponse(
@@ -118,7 +121,7 @@ def create_application() -> FastAPI:
                 "success": False,
                 "message": "Request validation failed",
                 "error_code": "VALIDATION_ERROR",
-                "data": exc.errors(),
+                "data": jsonable_encoder(exc.errors()),
             },
         )
 
@@ -180,7 +183,7 @@ def create_application() -> FastAPI:
             "environment": settings.ENVIRONMENT,
             "database": db_status,
             "redis": redis_status,
-            "docs": "/docs",
+            "docs": None if is_prod else "/docs",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 

@@ -1,6 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Header, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.rate_limit import rate_limiter
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
 from app.models.user import User
@@ -39,6 +40,7 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
+    rate_limiter.check(f"login:{ip}:{req.email_or_phone}", max_requests=10, window_seconds=60)
     user_agent = request.headers.get("user-agent", "Mobile App")
     service = AuthService(db)
     result = await service.login(req, ip=ip, user_agent=user_agent)
@@ -49,6 +51,7 @@ async def send_otp(
     req: SendOtpRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    rate_limiter.check(f"otp:{req.phone}", max_requests=5, window_seconds=120)
     service = AuthService(db)
     success = await service.send_otp(req.phone)
     return ApiResponse(data=success, message="OTP verification code sent")

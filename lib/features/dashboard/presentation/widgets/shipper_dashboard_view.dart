@@ -37,10 +37,10 @@ class ShipperDashboardView extends StatelessWidget {
       body: BlocBuilder<ShipmentBloc, ShipmentState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            return const SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
-                children: const [
+                children: [
                   NeuSkeleton(width: double.infinity, height: 140, borderRadius: 16),
                   SizedBox(height: 16),
                   Row(

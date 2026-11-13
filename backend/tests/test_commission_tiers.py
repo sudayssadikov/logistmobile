@@ -47,13 +47,13 @@ async def test_escrow_commission_deducted_from_carrier_not_shipper(client: Async
     topup_resp = await client.post("/api/v1/wallet/deposit", json={"amount": 10000000.0}, headers=s_headers)
     assert topup_resp.status_code == 200
 
-    # 2. Register Carrier
+    # 2. Register Carrier -> Driver
     c_resp = await client.post("/api/v1/auth/register", json={
         "fullName": "Fee Test Carrier",
         "email": "fee_carrier@test.uz",
         "phone": "+998901239902",
         "password": "Password123!",
-        "role": "carrier",
+        "role": "driver",
     })
     assert c_resp.status_code == 201
     c_token = c_resp.json()["data"]["access_token"]
@@ -61,7 +61,7 @@ async def test_escrow_commission_deducted_from_carrier_not_shipper(client: Async
     c_user_id = c_resp.json()["data"]["user"]["id"]
 
     # 3. Create Load for 4,000,000 UZS (Tier 2)
-    load_resp = await client.post("/api/v1/loads", json={
+    load_resp = await client.post("/api/v1/shipments", json={
         "origin": {"city": "Tashkent", "address": "Hub A"},
         "destination": {"city": "Samarkand", "address": "Hub B"},
         "cargoTitle": "Apples Delivery",
@@ -74,7 +74,7 @@ async def test_escrow_commission_deducted_from_carrier_not_shipper(client: Async
     shipment_id = load_resp.json()["data"]["id"]
 
     # 4. Carrier bids and Shipper accepts
-    bid_resp = await client.post(f"/api/v1/loads/{shipment_id}/bids", json={
+    bid_resp = await client.post(f"/api/v1/shipments/{shipment_id}/bids", json={
         "driverName": "Alisher",
         "vehicleModel": "Isuzu",
         "plateNumber": "01 555 FFF",
@@ -83,7 +83,7 @@ async def test_escrow_commission_deducted_from_carrier_not_shipper(client: Async
     assert bid_resp.status_code == 200
     bid_id = bid_resp.json()["data"]["bids"][0]["id"]
 
-    accept_resp = await client.post(f"/api/v1/loads/{shipment_id}/bids/{bid_id}/accept", headers=s_headers)
+    accept_resp = await client.post(f"/api/v1/shipments/{shipment_id}/bids/{bid_id}/accept", headers=s_headers)
     assert accept_resp.status_code == 200
 
     # 5. Shipper funds escrow
@@ -94,7 +94,7 @@ async def test_escrow_commission_deducted_from_carrier_not_shipper(client: Async
     assert shipper_wallet["inEscrowHoldBalance"] == 4000000.0
 
     # 6. Verify shipment details show locked commission & carrier payout
-    get_shp = await client.get(f"/api/v1/loads/{shipment_id}", headers=s_headers)
+    get_shp = await client.get(f"/api/v1/shipments/{shipment_id}", headers=s_headers)
     assert get_shp.status_code == 200
     shp_data = get_shp.json()["data"]
     assert shp_data["commission_amount"] == 50000.0
@@ -128,7 +128,7 @@ async def test_escrow_cancellation_full_refund_zero_commission(client: AsyncClie
 
     await client.post("/api/v1/wallet/deposit", json={"amount": 5000000.0}, headers=s_headers)
 
-    load_resp = await client.post("/api/v1/loads", json={
+    load_resp = await client.post("/api/v1/shipments", json={
         "origin": {"city": "Tashkent", "address": "Hub"},
         "destination": {"city": "Andijan", "address": "Hub"},
         "cargoTitle": "Cancel Load",
@@ -143,7 +143,7 @@ async def test_escrow_cancellation_full_refund_zero_commission(client: AsyncClie
     await client.post(f"/api/v1/wallet/escrow/{shipment_id}/fund", headers=s_headers)
 
     # Cancel Load
-    cancel_resp = await client.post(f"/api/v1/loads/{shipment_id}/cancel", headers=s_headers)
+    cancel_resp = await client.post(f"/api/v1/shipments/{shipment_id}/cancel", headers=s_headers)
     assert cancel_resp.status_code == 200
 
     # Check Shipper wallet: in_escrow_hold is 0, full balance restored

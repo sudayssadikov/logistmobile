@@ -96,9 +96,6 @@ enum LoadStatus {
 
   /// Check if a user role is permitted to advance to the next state
   bool canAdvance(UserRole role) {
-    if (role == UserRole.admin) {
-      return this != LoadStatus.completedPayoutReleased;
-    }
     switch (this) {
       case LoadStatus.created:
       case LoadStatus.pendingBid:
@@ -106,7 +103,7 @@ enum LoadStatus {
       case LoadStatus.carrierAssigned:
         return role == UserRole.shipper; // Fund escrow
       case LoadStatus.escrowFunded:
-        return role == UserRole.carrier || role == UserRole.driver;
+        return role == UserRole.driver;
       case LoadStatus.goingToPickup:
       case LoadStatus.arrivedAtPickup:
       case LoadStatus.loading:
@@ -114,7 +111,7 @@ enum LoadStatus {
       case LoadStatus.arrivedAtDestination:
       case LoadStatus.unloading:
       case LoadStatus.delivered:
-        return role == UserRole.driver || role == UserRole.carrier;
+        return role == UserRole.driver;
       case LoadStatus.completedPayoutReleased:
         return false;
     }

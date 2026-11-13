@@ -21,6 +21,10 @@ abstract class ILocalStorageService {
 
   Future<void> saveLanguage(String languageCode);
   Future<String> getLanguage();
+
+  Future<void> saveString(String key, String value);
+  Future<String?> getString(String key);
+  Future<void> removeString(String key);
 }
 
 /// In-memory & preference-backed storage implementation for cross-platform reliability
@@ -110,5 +114,20 @@ class LocalStorageService implements ILocalStorageService {
   @override
   Future<String> getLanguage() async {
     return (_memoryStore[AppConstants.languageKey] as String?) ?? 'en';
+  }
+
+  @override
+  Future<void> saveString(String key, String value) async {
+    _memoryStore[key] = value;
+  }
+
+  @override
+  Future<String?> getString(String key) async {
+    return _memoryStore[key] as String?;
+  }
+
+  @override
+  Future<void> removeString(String key) async {
+    _memoryStore.remove(key);
   }
 }

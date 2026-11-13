@@ -42,8 +42,9 @@ class _UploadDocumentModalState extends State<UploadDocumentModal> {
   void initState() {
     super.initState();
     final availableTypes = LogisticsDocType.values.where((t) {
-      if (widget.userRole == UserRole.driver) return t == LogisticsDocType.driverLicense;
-      if (widget.userRole == UserRole.carrier) return t == LogisticsDocType.vehicleReg || t == LogisticsDocType.cmrInsurance;
+      if (widget.userRole == UserRole.driver) {
+        return t == LogisticsDocType.driverLicense || t == LogisticsDocType.vehicleReg || t == LogisticsDocType.cmrInsurance;
+      }
       return t == LogisticsDocType.companyReg || t == LogisticsDocType.cargoClearance;
     }).toList();
     _selectedType = availableTypes.isNotEmpty ? availableTypes.first : LogisticsDocType.driverLicense;
@@ -116,8 +117,9 @@ class _UploadDocumentModalState extends State<UploadDocumentModal> {
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     final typesForRole = LogisticsDocType.values.where((t) {
-      if (widget.userRole == UserRole.driver) return t == LogisticsDocType.driverLicense;
-      if (widget.userRole == UserRole.carrier) return t == LogisticsDocType.vehicleReg || t == LogisticsDocType.cmrInsurance;
+      if (widget.userRole == UserRole.driver) {
+        return t == LogisticsDocType.driverLicense || t == LogisticsDocType.vehicleReg || t == LogisticsDocType.cmrInsurance;
+      }
       return t == LogisticsDocType.companyReg || t == LogisticsDocType.cargoClearance;
     }).toList();
 

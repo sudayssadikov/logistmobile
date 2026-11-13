@@ -42,7 +42,7 @@ class DocumentService:
 
     async def upload_document(self, user_id: str, req: CreateDocumentRequest) -> DocumentModel:
         user = await self.user_repo.get_by_id(user_id)
-        role = user.role if user else UserRole.CARRIER.value
+        role = user.role if user else UserRole.DRIVER.value
 
         doc = Document(
             user_id=user_id,

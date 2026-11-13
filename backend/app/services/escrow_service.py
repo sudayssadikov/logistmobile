@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enums import AuditAction, EscrowStatus, LoadStatus, TransactionType
+from app.core.enums import AuditAction, EscrowStatus, LoadStatus, NotificationCategory, TransactionType
 from app.core.exceptions import ConflictError, EscrowLedgerError, NotFoundError, PermissionDeniedError
 from app.models.wallet import EscrowLock, LedgerTransaction, Wallet
 from app.repositories.audit_repo import AuditRepository
+from app.repositories.dispute_repo import NotificationRepository
 from app.repositories.shipment_repo import ShipmentRepository
 from app.repositories.wallet_repo import EscrowLockRepository, LedgerTransactionRepository, WalletRepository
 from app.schemas.wallet import EscrowTransactionModel, WalletModel
@@ -17,6 +18,7 @@ class EscrowService:
         self.ledger_repo = LedgerTransactionRepository(session)
         self.shipment_repo = ShipmentRepository(session)
         self.audit_repo = AuditRepository(session)
+        self.notif_repo = NotificationRepository(session)
 
     @staticmethod
     def calculate_commission(price: float) -> float:
@@ -123,6 +125,18 @@ class EscrowService:
             changes=f"Locked {amount} UZS (Reserved fee: {commission} UZS, Carrier payout: {carrier_payout} UZS) for {shipment.tracking_code}",
         )
 
+        if shipment.carrier_id:
+            from app.models.notification import Notification
+            carrier_notif = Notification(
+                user_id=shipment.carrier_id,
+                title="To'lov muzlatildi (Escrow)",
+                body=f"{shipment.tracking_code} yuki uchun to'lov ({amount:,.0f} UZS) escrow'ga muzlatildi. Reysni boshlashingiz mumkin.",
+                category=NotificationCategory.PAYMENTS.value,
+                action_route=f"/shipments/{shipment.id}",
+                is_read=False,
+            )
+            self.session.add(carrier_notif)
+
         await self.session.flush()
         return await self.get_wallet_summary(shipper_user_id)
 
@@ -209,6 +223,27 @@ class EscrowService:
             changes=f"Released {payout_net} UZS to carrier {shipment.carrier_id}, {commission} UZS commission to platform",
         )
 
+        from app.models.notification import Notification
+        carrier_notif = Notification(
+            user_id=shipment.carrier_id,
+            title="To'lov o'tkazildi",
+            body=f"{shipment.tracking_code} yuki yetkazildi. Sof daromad: {payout_net:,.0f} UZS hisobingizga tushdi.",
+            category=NotificationCategory.PAYMENTS.value,
+            action_route=f"/shipments/{shipment.id}",
+            is_read=False,
+        )
+        self.session.add(carrier_notif)
+
+        shipper_notif = Notification(
+            user_id=shipment.shipper_id,
+            title="Buyurtma yakunlandi",
+            body=f"{shipment.tracking_code} yuki muvaffaqiyatli topshirildi va to'lov yakunlandi.",
+            category=NotificationCategory.SHIPMENTS.value,
+            action_route=f"/shipments/{shipment.id}",
+            is_read=False,
+        )
+        self.session.add(shipper_notif)
+
         await self.session.flush()
         return True
 
@@ -257,6 +292,28 @@ class EscrowService:
             user_id=authorized_by_user_id,
             changes=f"Refunded full {full_amount} UZS to shipper without commission. Reason: {reason}",
         )
+
+        from app.models.notification import Notification
+        shipper_notif = Notification(
+            user_id=shipment.shipper_id,
+            title="Mablag' to'liq qaytarildi",
+            body=f"{shipment.tracking_code} yuki bekor qilindi. {full_amount:,.0f} UZS to'liq hisobingizga qaytarildi.",
+            category=NotificationCategory.PAYMENTS.value,
+            action_route=f"/shipments/{shipment.id}",
+            is_read=False,
+        )
+        self.session.add(shipper_notif)
+
+        if shipment.carrier_id:
+            carrier_notif = Notification(
+                user_id=shipment.carrier_id,
+                title="Yuk bekor qilindi",
+                body=f"{shipment.tracking_code} yuki bekor qilindi va escrow to'xtatildi.",
+                category=NotificationCategory.SHIPMENTS.value,
+                action_route=f"/shipments/{shipment.id}",
+                is_read=False,
+            )
+            self.session.add(carrier_notif)
 
         await self.session.flush()
         return True

@@ -117,7 +117,7 @@ class FleetService:
 
     async def get_drivers(self) -> List[DriverModel]:
         drivers = await self.user_repo.get_all()
-        driver_users = [u for u in drivers if u.role in [UserRole.DRIVER.value, UserRole.CARRIER.value]]
+        driver_users = [u for u in drivers if u.role == UserRole.DRIVER.value]
         results = []
         for u in driver_users:
             dp = await self.driver_repo.get_by_user_id(u.id)

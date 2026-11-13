@@ -51,14 +51,14 @@ async def test_login_invalid_password(client: AsyncClient):
         "email": "carrier@test.uz",
         "phone": "+998902223344",
         "password": "CorrectPassword123",
-        "role": "carrier",
+        "role": "driver",
     })
 
     # Wrong password attempt
     resp = await client.post("/api/v1/auth/login", json={
         "emailOrPhone": "carrier@test.uz",
         "password": "WrongPassword!",
-        "role": "carrier",
+        "role": "driver",
     })
     assert resp.status_code == 401
     assert resp.json()["success"] is False

@@ -1,8 +1,11 @@
 from typing import List
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enums import AuditAction, BidNegotiationStatus, LoadStatus, UserRole
+from app.core.enums import AuditAction, BidNegotiationStatus, LoadStatus, NotificationCategory, UserRole
 from app.core.exceptions import NotFoundError, PermissionDeniedError
 from app.models.bid import Bid, NegotiationStep
+from app.models.chat import ChatChannel
+from app.services.notification_service import NotificationService
 from app.repositories.bid_repo import BidRepository
 from app.repositories.shipment_repo import ShipmentRepository
 from app.repositories.user_repo import UserRepository
@@ -65,6 +68,16 @@ class BidService:
             changes=f"Submitted bid of {req.bid_amount} UZS on load {shipment.tracking_code}",
         )
 
+        # Notify Shipper
+        notif_service = NotificationService(self.session)
+        await notif_service.create_notification(
+            user_id=shipment.shipper_id,
+            title="Yangi taklif!",
+            body=f"{carrier.company_name or carrier.full_name} sizning yukingizga taklif yubordi.",
+            category=NotificationCategory.SHIPMENTS,
+            action_route=f"/shipments/{shipment.id}",
+        )
+
         await self.session.flush()
         return await self.shipment_service.get_shipment_by_id(shipment.id)
 
@@ -82,7 +95,7 @@ class BidService:
 
         step = NegotiationStep(
             bid_id=bid.id,
-            author_role="shipper" if user_role == UserRole.SHIPPER.value else "carrier",
+            author_role="shipper" if user_role == UserRole.SHIPPER.value else "driver",
             author_name=user.full_name,
             proposed_price=req.counter_price,
             comment=req.comment or f"Counter offer of {req.counter_price} proposed",
@@ -114,12 +127,36 @@ class BidService:
         shipment.price = bid.bid_amount
         shipment.status = LoadStatus.CARRIER_ASSIGNED.value
 
+        # Create associated chat channel only upon assignment
+        existing_channel = await self.session.execute(
+            select(ChatChannel).where(ChatChannel.shipment_id == shipment.id)
+        )
+        channel = existing_channel.scalar_one_or_none()
+        if not channel:
+            channel = ChatChannel(
+                shipment_id=shipment.id,
+                shipment_title=shipment.cargo_title,
+                tracking_code=shipment.tracking_code,
+                last_message="Haydovchi tayinlandi. Muloqot ochildi.",
+            )
+            self.session.add(channel)
+
         await self.audit_repo.log_event(
             action=AuditAction.BID_ACCEPT.value,
             resource_type="shipment",
             resource_id=shipment.id,
             user_id=shipper_user_id,
             changes=f"Accepted bid {bid.id} from {bid.carrier_name}",
+        )
+
+        # Notify Driver/Carrier
+        notif_service = NotificationService(self.session)
+        await notif_service.create_notification(
+            user_id=bid.carrier_id,
+            title="Taklifingiz qabul qilindi!",
+            body=f"Yuk egasi sizning taklifingizni tasdiqladi. Buyurtma: {shipment.cargo_title}",
+            category=NotificationCategory.SHIPMENTS,
+            action_route=f"/shipments/{shipment.id}",
         )
 
         await self.session.flush()

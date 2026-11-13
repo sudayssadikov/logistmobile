@@ -40,3 +40,23 @@ class NotificationService:
         self.session.add(token)
         await self.session.flush()
         return True
+
+    async def create_notification(
+        self,
+        user_id: str,
+        title: str,
+        body: str,
+        category: NotificationCategory = NotificationCategory.SHIPMENTS,
+        action_route: Optional[str] = None,
+    ) -> NotificationModel:
+        notif = Notification(
+            user_id=user_id,
+            title=title,
+            body=body,
+            category=category.value if isinstance(category, NotificationCategory) else str(category),
+            action_route=action_route,
+            is_read=False,
+        )
+        self.session.add(notif)
+        await self.session.flush()
+        return self._to_model(notif)

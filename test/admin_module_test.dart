@@ -3,7 +3,6 @@ import 'package:logiflow_mobile/features/admin/data/repositories/admin_repositor
 import 'package:logiflow_mobile/features/admin/domain/models/admin_kpi_model.dart';
 import 'package:logiflow_mobile/features/admin/presentation/bloc/admin_dashboard_bloc.dart';
 import 'package:logiflow_mobile/features/admin/presentation/bloc/user_moderation_bloc.dart';
-import 'package:logiflow_mobile/features/auth/domain/models/user_model.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

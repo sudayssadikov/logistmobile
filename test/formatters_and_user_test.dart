@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:logiflow_mobile/core/network/api_result.dart';
 import 'package:logiflow_mobile/core/storage/local_storage_service.dart';
 import 'package:logiflow_mobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:logiflow_mobile/features/auth/domain/models/user_model.dart';
@@ -10,8 +9,9 @@ void main() {
   group('User Role & Model Tests', () {
     test('UserRole keys resolve correctly', () {
       expect(UserRole.fromKey('shipper'), UserRole.shipper);
-      expect(UserRole.fromKey('carrier'), UserRole.carrier);
+      expect(UserRole.fromKey('carrier'), UserRole.shipper);
       expect(UserRole.fromKey('driver'), UserRole.driver);
+      expect(UserRole.fromKey('truck_driver'), UserRole.driver);
       expect(UserRole.fromKey('unknown'), UserRole.shipper);
     });
 
@@ -21,7 +21,7 @@ void main() {
         fullName: 'Test Logistics User',
         email: 'test@logiflow.uz',
         phone: '+998 90 123 45 67',
-        role: UserRole.carrier,
+        role: UserRole.driver,
         companyName: 'Express Fleet LLC',
         isVerified: true,
         rating: 4.85,
@@ -34,7 +34,7 @@ void main() {
 
       expect(fromJson.id, user.id);
       expect(fromJson.fullName, user.fullName);
-      expect(fromJson.role, UserRole.carrier);
+      expect(fromJson.role, UserRole.driver);
       expect(fromJson.walletBalance, 12000000.0);
     });
 

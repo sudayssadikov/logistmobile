@@ -30,7 +30,7 @@ async def test_chat_and_call_lifecycle(client: AsyncClient):
     driver_id = driver_resp.json()["data"]["user"]["id"]
 
     # 3. Create a Shipment
-    shipment_resp = await client.post("/api/v1/loads", headers=shipper_headers, json={
+    shipment_resp = await client.post("/api/v1/shipments", headers=shipper_headers, json={
         "origin": {
             "city": "Tashkent",
             "address": "Chilanzar 12",
@@ -54,7 +54,7 @@ async def test_chat_and_call_lifecycle(client: AsyncClient):
     assert shipment_resp.status_code == 201
     shipment_id = shipment_resp.json()["data"]["id"]
 
-    # 4. Send Chat message
+    # 4. Send Chat message (Shipper owner can leave message)
     msg_resp = await client.post(f"/api/v1/chat/{shipment_id}", headers=shipper_headers, json={
         "type": "text",
         "content": "Salom haydovchi, yuk yuklashga tayyor!",
@@ -63,18 +63,43 @@ async def test_chat_and_call_lifecycle(client: AsyncClient):
     msg_data = msg_resp.json()["data"]
     assert msg_data["content"] == "Salom haydovchi, yuk yuklashga tayyor!"
 
-    # 5. Fetch messages
+    # 5. Verify Unassigned Driver cannot fetch messages (403 forbidden)
+    unassigned_fetch = await client.get(f"/api/v1/chat/{shipment_id}", headers=driver_headers)
+    assert unassigned_fetch.status_code == 403
+
+    # 6. Driver bids and Shipper accepts bid -> Carrier assigned
+    bid_resp = await client.post(f"/api/v1/shipments/{shipment_id}/bids", headers=driver_headers, json={
+        "bid_amount": 8500000.0,
+    })
+    assert bid_resp.status_code == 200
+    bid_id = bid_resp.json()["data"]["bids"][0]["id"]
+    await client.post(f"/api/v1/shipments/{shipment_id}/bids/{bid_id}/accept", headers=shipper_headers)
+
+    # Now assigned Driver can fetch messages
     get_msgs_resp = await client.get(f"/api/v1/chat/{shipment_id}", headers=driver_headers)
     assert get_msgs_resp.status_code == 200
     messages = get_msgs_resp.json()["data"]
     assert len(messages) >= 1
 
-    # 6. Check WebRTC ICE servers endpoint
+    # 7. Check WebRTC ICE servers endpoint
     ice_resp = await client.get("/api/v1/calls/ice-servers", headers=shipper_headers)
     assert ice_resp.status_code == 200
     assert "iceServers" in ice_resp.json()["data"]
 
-    # 7. Initiate Audio Call
+    # 8. Verify Call blocked before escrow funding
+    blocked_call = await client.post("/api/v1/calls/initiate", headers=shipper_headers, json={
+        "receiverId": driver_id,
+        "shipmentId": shipment_id,
+        "type": "audio",
+    })
+    assert blocked_call.status_code in [400, 403]
+
+    # Fund escrow via status update or escrow endpoint
+    await client.post(f"/api/v1/shipments/{shipment_id}/status", headers=shipper_headers, json={
+        "next_status": "escrowFunded",
+    })
+
+    # Initiate Audio Call (now succeeds because escrow is funded)
     call_resp = await client.post("/api/v1/calls/initiate", headers=shipper_headers, json={
         "receiverId": driver_id,
         "shipmentId": shipment_id,

@@ -235,6 +235,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     required String receiverId,
     required String receiverName,
   }) {
+    if (!(_shipment?.isEscrowFunded ?? false)) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Row(
+            children: const [
+              Icon(Icons.security_rounded, color: AppColors.amber),
+              SizedBox(width: 8),
+              Text('Xavfsiz aloqa'),
+            ],
+          ),
+          content: const Text(
+            'Qo\'ng\'iroq qilish va to\'g\'ridan-to\'g\'ri bog\'lanish faqat to\'lov Escrow hisobiga muzlatilgandan so\'ng yoqiladi.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tushundim'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     context.read<CallBloc>().add(
           StartCallRequested(
             receiverId: receiverId,
@@ -250,7 +275,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentUser = context.watch<AuthBloc>().state.user;
-    final isDriverOrCarrier = currentUser?.role == UserRole.driver || currentUser?.role == UserRole.carrier;
+    final isDriverOrCarrier = currentUser?.role == UserRole.driver;
 
     // Dynamic interlocutor based on user role and shipment
     String interlocutorName;
@@ -765,8 +790,46 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ),
 
               // Telegram Input Bar (Mic / Hold-to-record / Attachment sheet)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              if (_shipment?.status == LoadStatus.delivered ||
+                  _shipment?.status == LoadStatus.completedPayoutReleased ||
+                  _shipment?.status == LoadStatus.cancelled)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                    border: Border(
+                      top: BorderSide(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      ),
+                    ),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          size: 16,
+                          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Yuk yetkazilgan yoki bekor qilingan. Chat faqat o\'qish rejimida.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
                   border: Border(

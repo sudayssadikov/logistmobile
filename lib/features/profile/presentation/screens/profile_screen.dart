@@ -162,6 +162,39 @@ class ProfileScreen extends StatelessWidget {
                                         color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
                                       ),
                                     ),
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: user.role == UserRole.shipper
+                                            ? AppColors.primary.withValues(alpha: 0.12)
+                                            : AppColors.emerald.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: user.role == UserRole.shipper ? AppColors.primary : AppColors.emerald,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            user.role == UserRole.shipper ? Icons.business_center_rounded : Icons.local_shipping_rounded,
+                                            size: 14,
+                                            color: user.role == UserRole.shipper ? AppColors.primary : AppColors.emerald,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            user.role == UserRole.shipper ? 'roles.shipper'.tr() : 'roles.driver'.tr(),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: user.role == UserRole.shipper ? AppColors.primary : AppColors.emerald,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -248,7 +281,7 @@ class ProfileScreen extends StatelessWidget {
                       trailing: const Icon(Icons.chevron_right_rounded, size: 20),
                       onTap: () => context.push('/calls/history'),
                     ),
-                    if (user.role == UserRole.driver || user.role == UserRole.carrier)
+                    if (user.role == UserRole.driver)
                       _SettingTile(
                         icon: Icons.local_shipping_outlined,
                         title: 'profile.fleetManagement'.tr(),

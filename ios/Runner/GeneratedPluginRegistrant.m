@@ -24,8 +24,8 @@
 @import geolocator_apple;
 #endif
 
-#if __has_include(<image_picker_ios/FLTImagePickerPlugin.h>)
-#import <image_picker_ios/FLTImagePickerPlugin.h>
+#if __has_include(<image_picker_ios/ImagePickerPlugin.h>)
+#import <image_picker_ios/ImagePickerPlugin.h>
 #else
 @import image_picker_ios;
 #endif
@@ -48,7 +48,7 @@
   [AudioplayersDarwinPlugin registerWithRegistrar:[registry registrarForPlugin:@"AudioplayersDarwinPlugin"]];
   [ConnectivityPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"ConnectivityPlusPlugin"]];
   [GeolocatorPlugin registerWithRegistrar:[registry registrarForPlugin:@"GeolocatorPlugin"]];
-  [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]];
+  [ImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"ImagePickerPlugin"]];
   [LocalAuthPlugin registerWithRegistrar:[registry registrarForPlugin:@"LocalAuthPlugin"]];
   [PrintingPlugin registerWithRegistrar:[registry registrarForPlugin:@"PrintingPlugin"]];
 }
