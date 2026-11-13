@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/widgets/metric_card.dart';
-import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/neu_design_system.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../fleet/presentation/bloc/fleet_bloc.dart';
+import '../../../fleet/presentation/bloc/fleet_event.dart';
 import '../../../shipments/domain/models/load_status.dart';
 import '../../../shipments/presentation/bloc/shipment_bloc.dart';
+import '../../../shipments/presentation/bloc/shipment_event.dart';
 import '../../../shipments/presentation/bloc/shipment_state.dart';
 import '../../../shipments/presentation/widgets/shipment_card.dart';
 
@@ -17,85 +20,116 @@ class CarrierDashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = context.watch<AuthBloc>().state.user;
+    final fleetState = context.watch<FleetBloc>().state;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppColors.indigo,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.local_shipping_rounded, size: 18, color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user?.companyName ?? 'Carrier Fleet HQ',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  'Carrier Portal • Rating: ${user?.rating ?? 4.9} ★',
-                  style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
-                ),
-              ],
-            ),
-          ],
-        ),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      appBar: NeuAppBar(
+        title: user?.companyName ?? 'carrier.portal'.tr(),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune_rounded),
-            onPressed: () {},
+          NeuIconButton(
+            icon: Icons.notifications_outlined,
+            onPressed: () => context.push('/notifications'),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: BlocBuilder<ShipmentBloc, ShipmentState>(
         builder: (context, state) {
-          final openBids = state.shipments.where((e) => e.status == LoadStatus.pendingBid).toList();
-          final activeOrders = state.shipments.where((e) => e.status != LoadStatus.pendingBid && e.status != LoadStatus.completedPayoutReleased).toList();
+          if (state.isLoading) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                children: const [
+                  NeuSkeleton(width: double.infinity, height: 120, borderRadius: 16),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: NeuSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+                      SizedBox(width: 12),
+                      Expanded(child: NeuSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  NeuSkeleton(width: double.infinity, height: 110, borderRadius: 16),
+                ],
+              ),
+            );
+          }
+
+          if (state.errorMessage != null && state.shipments.isEmpty) {
+            return NeuErrorState(
+              message: state.errorMessage!,
+              onRetry: () {
+                context.read<ShipmentBloc>().add(const LoadShipmentsRequested());
+                context.read<FleetBloc>().add(LoadFleetRequested());
+              },
+            );
+          }
+
+          final openBids = state.shipments
+              .where((e) => e.status == LoadStatus.pendingBid)
+              .toList();
+
+          final activeOrders = state.shipments
+              .where((e) =>
+                  e.status != LoadStatus.pendingBid &&
+                  e.status != LoadStatus.completedPayoutReleased)
+              .toList();
+
+          final totalTrucks = fleetState.trucks.length;
+          final assignedTrucks = fleetState.trucks.where((t) => t.isAssigned).length;
+          final availableTrucks = totalTrucks - assignedTrucks;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Carrier Fleet Status Radar
-                Container(
+                // Carrier Fleet Status Card (Pure Neumorphism, Real Data)
+                NeuCard(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                  ),
-                  child: const Column(
+                  borderRadius: 18,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'FLEET READINESS',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                            'fleet.readiness'.tr(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            ),
                           ),
-                          StatusBadge(
-                            label: '8 Units Active',
-                            color: AppColors.emerald,
-                            fontSize: 10,
+                          NeuChip(
+                            label: '$totalTrucks ${'fleet.unitsTotal'.tr()}',
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _FleetCounter(label: 'On Road', count: '5', color: AppColors.primary),
-                          _FleetCounter(label: 'Loading', count: '2', color: AppColors.amber),
-                          _FleetCounter(label: 'Idle / Available', count: '3', color: AppColors.emerald),
+                          _FleetCounter(
+                            label: 'fleet.onRoad'.tr(),
+                            count: '$assignedTrucks',
+                            isDark: isDark,
+                          ),
+                          _FleetCounter(
+                            label: 'fleet.available'.tr(),
+                            count: '$availableTrucks',
+                            isDark: isDark,
+                          ),
+                          _FleetCounter(
+                            label: 'fleet.totalDrivers'.tr(),
+                            count: '${fleetState.drivers.length}',
+                            isDark: isDark,
+                          ),
                         ],
                       ),
                     ],
@@ -107,23 +141,74 @@ class CarrierDashboardView extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: MetricCard(
-                        title: 'Active Tripped Orders',
-                        value: '${activeOrders.length}',
-                        trendText: '+18.4%',
-                        icon: Icons.alt_route_rounded,
-                        iconColor: AppColors.primary,
+                      child: NeuCard(
+                        onTap: () => context.go('/shipments'),
+                        padding: const EdgeInsets.all(16),
+                        borderRadius: 16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            NeuIconButton(
+                              icon: Icons.alt_route_rounded,
+                              size: 38,
+                              iconSize: 20,
+                              onPressed: () => context.go('/shipments'),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '${activeOrders.length}',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'dashboard.activeOrders'.tr(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: MetricCard(
-                        title: 'Available Loads',
-                        value: '${openBids.length}',
-                        trendText: 'Ready to bid',
-                        icon: Icons.gavel_rounded,
-                        iconColor: AppColors.indigo,
+                      child: NeuCard(
                         onTap: () => context.go('/shipments'),
+                        padding: const EdgeInsets.all(16),
+                        borderRadius: 16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            NeuIconButton(
+                              icon: Icons.gavel_outlined,
+                              size: 38,
+                              iconSize: 20,
+                              onPressed: () => context.go('/shipments'),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '${openBids.length}',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'dashboard.availableLoads'.tr(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -135,28 +220,48 @@ class CarrierDashboardView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'AVAILABLE LOADS TO BID',
+                      'dashboard.availableLoadsToBid'.tr(),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
-                        color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => context.go('/shipments'),
-                      child: const Text('Load Board', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    ),
+                    if (openBids.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => context.go('/shipments'),
+                        child: Text(
+                          'dashboard.viewAll'.tr(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
-                ...openBids.map((shipment) {
-                  return ShipmentCard(
-                    shipment: shipment,
-                    onTap: () => context.push('/shipments/${shipment.id}'),
-                  );
-                }),
+                if (openBids.isEmpty)
+                  NeuEmptyState(
+                    icon: Icons.local_shipping_outlined,
+                    title: 'shipments.noAvailableLoads'.tr(),
+                    subtitle: 'shipments.noAvailableLoadsDesc'.tr(),
+                    actionText: 'common.refresh'.tr(),
+                    onAction: () => context.read<ShipmentBloc>().add(const LoadShipmentsRequested()),
+                  )
+                else
+                  ...openBids.take(4).map((shipment) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ShipmentCard(
+                        shipment: shipment,
+                        onTap: () => context.push('/shipments/${shipment.id}'),
+                      ),
+                    );
+                  }),
               ],
             ),
           );
@@ -169,17 +274,34 @@ class CarrierDashboardView extends StatelessWidget {
 class _FleetCounter extends StatelessWidget {
   final String label;
   final String count;
-  final Color color;
+  final bool isDark;
 
-  const _FleetCounter({required this.label, required this.count, required this.color});
+  const _FleetCounter({
+    required this.label,
+    required this.count,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(count, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color)),
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+          ),
+        ),
       ],
     );
   }

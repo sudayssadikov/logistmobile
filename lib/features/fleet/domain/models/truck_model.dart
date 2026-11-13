@@ -104,4 +104,6 @@ class TruckModel extends Equatable {
         assignedDriverName,
         isAvailable,
       ];
+
+  bool get isAssigned => assignedDriverId != null;
 }

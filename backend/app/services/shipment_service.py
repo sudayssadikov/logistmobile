@@ -93,6 +93,8 @@ class ShipmentService:
             weight_tons=s.weight_tons,
             volume_m3=s.volume_m3,
             price=s.price,
+            commission_amount=s.commission_amount or 0.0,
+            carrier_payout=s.carrier_payout or 0.0,
             is_escrow_funded=s.is_escrow_funded,
             distance_km=s.distance_km,
             eta=s.eta,

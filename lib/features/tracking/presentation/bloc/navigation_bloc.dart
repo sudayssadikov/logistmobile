@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'navigation_event.dart';
 import 'navigation_state.dart';
 
 class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
-  Timer? _routeSimulationTimer;
+  StreamSubscription<Position>? _positionSubscription;
 
   NavigationBloc() : super(const NavigationState()) {
     on<StartNavigation>(_onStartNavigation);
@@ -13,55 +14,88 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     on<EndNavigation>(_onEndNavigation);
   }
 
-  void _onStartNavigation(StartNavigation event, Emitter<NavigationState> emit) {
-    _routeSimulationTimer?.cancel();
+  Future<void> _onStartNavigation(StartNavigation event, Emitter<NavigationState> emit) async {
+    await _positionSubscription?.cancel();
+    _positionSubscription = null;
 
-    final mockManeuvers = [
-      const RouteManeuver(
-        instructionUz: '300 metrdan so\'ng o\'ngga buriling: M39 Toshkent - Samarqand trassasi',
-        instructionEn: 'In 300 meters, turn right onto M39 Highway towards Samarkand',
-        instructionRu: 'Через 300 метров поверните направо на трассу М39 в сторону Самарканда',
-        distanceText: '300 m',
-        iconType: 'turn_right',
-      ),
-      const RouteManeuver(
-        instructionUz: 'M39 magistral yo\'li bo\'ylab to\'g\'ri 45 km davom eting',
-        instructionEn: 'Continue straight along M39 highway for 45 km',
-        instructionRu: 'Продолжайте движение прямо по трассе М39 на протяжении 45 км',
-        distanceText: '45 km',
+    final origin = event.shipment.origin.address;
+    final destination = event.shipment.destination.address;
+
+    final maneuvers = [
+      RouteManeuver(
+        instructionUz: '$origin dan harakatni boshlang',
+        instructionEn: 'Start navigation from $origin',
+        instructionRu: 'Начните движение от $origin',
+        distanceText: '0 m',
         iconType: 'straight',
       ),
       const RouteManeuver(
-        instructionUz: 'Jizzax aylanma yo\'li: 2-chi chiqish orqali aylanaga kiring',
-        instructionEn: 'Jizzakh bypass: Take the 2nd exit at the roundabout',
-        instructionRu: 'Объездная Джизака: съезжайте на 2-й съезд кольцевого движения',
-        distanceText: '1.2 km',
-        iconType: 'roundabout',
+        instructionUz: 'Belgilangan marshrut bo\'yicha davom eting',
+        instructionEn: 'Proceed along the designated route',
+        instructionRu: 'Следуйте по заданному маршруту',
+        distanceText: '1 km',
+        iconType: 'straight',
       ),
-      const RouteManeuver(
-        instructionUz: 'Manzilga 500 metr qoldi: Samarqand Logistika Markazi, 12-Dok',
-        instructionEn: 'Destination in 500 meters: Samarkand Logistics Hub, Dock 12',
-        instructionRu: 'До пункта назначения 500 метров: Самаркандский логистический центр, Док 12',
-        distanceText: '500 m',
+      RouteManeuver(
+        instructionUz: 'Yetkazish manzili: $destination',
+        instructionEn: 'Destination: $destination',
+        instructionRu: 'Пункт назначения: $destination',
+        distanceText: '100 m',
         iconType: 'destination',
       ),
     ];
+
+    final meters = Geolocator.distanceBetween(
+      event.shipment.origin.latitude,
+      event.shipment.origin.longitude,
+      event.shipment.destination.latitude,
+      event.shipment.destination.longitude,
+    );
+    final initialDistKm = meters / 1000.0;
 
     emit(state.copyWith(
       isNavigating: true,
       shipment: event.shipment,
       currentStepIndex: 0,
-      maneuvers: mockManeuvers,
-      spokenAlert: mockManeuvers.first.instructionUz,
-      remainingDistanceKm: 142.5,
-      remainingMinutes: 115,
-      currentSpeedKmh: 78.0,
+      maneuvers: maneuvers,
+      spokenAlert: maneuvers.first.instructionUz,
+      remainingDistanceKm: initialDistKm,
+      remainingMinutes: initialDistKm > 0 ? (initialDistKm / 60.0 * 60).round() : 0,
+      currentSpeedKmh: 0.0,
     ));
 
-    // Simulated progress timer
-    _routeSimulationTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
-      add(AdvanceRouteStep());
-    });
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        _positionSubscription = Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((Position position) {
+          double speedKmh = position.speed > 0 ? (position.speed * 3.6) : 0.0;
+          double remainingKm = state.remainingDistanceKm;
+
+          final distMeters = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            event.shipment.destination.latitude,
+            event.shipment.destination.longitude,
+          );
+          remainingKm = (distMeters / 1000.0);
+
+          int minutes = speedKmh > 5 ? ((remainingKm / speedKmh) * 60).round() : 0;
+
+          add(AdvanceRouteStep(
+            speedKmh: speedKmh,
+            remainingKm: remainingKm,
+            remainingMinutes: minutes,
+          ));
+        });
+      }
+    } catch (_) {
+      // GPS not available
+    }
   }
 
   void _onToggleVoiceGuidance(ToggleVoiceGuidance event, Emitter<NavigationState> emit) {
@@ -69,30 +103,26 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
   }
 
   void _onAdvanceRouteStep(AdvanceRouteStep event, Emitter<NavigationState> emit) {
-    if (state.currentStepIndex < state.maneuvers.length - 1) {
-      final nextIdx = state.currentStepIndex + 1;
-      final nextManeuver = state.maneuvers[nextIdx];
-      emit(state.copyWith(
-        currentStepIndex: nextIdx,
-        spokenAlert: state.voiceGuidanceEnabled ? nextManeuver.instructionUz : null,
-        remainingDistanceKm: (state.remainingDistanceKm - 35.0).clamp(0.5, 300.0),
-        remainingMinutes: (state.remainingMinutes - 25).clamp(5, 300),
-      ));
-    }
+    emit(state.copyWith(
+      currentSpeedKmh: event.speedKmh ?? state.currentSpeedKmh,
+      remainingDistanceKm: event.remainingKm ?? state.remainingDistanceKm,
+      remainingMinutes: event.remainingMinutes ?? state.remainingMinutes,
+    ));
   }
 
   void _onEndNavigation(EndNavigation event, Emitter<NavigationState> emit) {
-    _routeSimulationTimer?.cancel();
-    _routeSimulationTimer = null;
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
     emit(state.copyWith(
       isNavigating: false,
       clearAlert: true,
+      currentSpeedKmh: 0.0,
     ));
   }
 
   @override
   Future<void> close() {
-    _routeSimulationTimer?.cancel();
+    _positionSubscription?.cancel();
     return super.close();
   }
 }

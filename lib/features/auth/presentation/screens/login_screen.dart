@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/neu_shadows.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../domain/models/user_model.dart';
@@ -119,13 +120,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       Row(
                         children: [
                           Container(
-                            width: 40,
-                            height: 40,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
-                              borderRadius: BorderRadius.circular(10),
+                              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: NeuShadows.elevation(isDark: isDark, blur: 8, offset: 3),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF2A2D31) : Colors.white.withValues(alpha: 0.8),
+                                width: 1.5,
+                              ),
                             ),
-                            child: const Icon(Icons.local_shipping_rounded, color: Colors.white, size: 22),
+                            child: Icon(Icons.local_shipping_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary, size: 24),
                           ),
                           const SizedBox(width: 12),
                           Column(
@@ -210,12 +216,33 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   const SizedBox(height: 10),
                   // Role Selector (2 Primary Roles: Yuk beruvchi vs Haydovchi/Tashuvchi)
                   Column(
-                    children: [UserRole.shipper, UserRole.driver].map((role) {
+                    children: [UserRole.shipper, UserRole.carrier, UserRole.driver, UserRole.admin].map((role) {
                       final isSelected = _selectedRole == role;
-                      final isShipper = role == UserRole.shipper;
-                      final roleIcon = isShipper ? Icons.inventory_2_outlined : Icons.local_shipping_outlined;
-                      final roleTitle = isShipper ? 'roles.shipperTitle'.tr() : 'roles.driverTitle'.tr();
-                      final roleSub = isShipper ? 'roles.shipperSubtitle'.tr() : 'roles.driverSubtitle'.tr();
+                      IconData roleIcon;
+                      String roleTitle;
+                      String roleSub;
+                      switch (role) {
+                        case UserRole.shipper:
+                          roleIcon = Icons.inventory_2_outlined;
+                          roleTitle = 'roles.shipperTitle'.tr();
+                          roleSub = 'roles.shipperSubtitle'.tr();
+                          break;
+                        case UserRole.carrier:
+                          roleIcon = Icons.domain_rounded;
+                          roleTitle = 'roles.carrierTitle'.tr();
+                          roleSub = 'roles.carrierSubtitle'.tr();
+                          break;
+                        case UserRole.driver:
+                          roleIcon = Icons.local_shipping_outlined;
+                          roleTitle = 'roles.driverTitle'.tr();
+                          roleSub = 'roles.driverSubtitle'.tr();
+                          break;
+                        case UserRole.admin:
+                          roleIcon = Icons.admin_panel_settings_outlined;
+                          roleTitle = 'roles.adminTitle'.tr();
+                          roleSub = 'roles.adminSubtitle'.tr();
+                          break;
+                      }
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),

@@ -1,0 +1,16 @@
+Analyzing logist.flutter...                                     
+
+   info - Unnecessary 'const' keyword. Try removing the keyword - lib\core\theme\neu_design_system.dart:351:17 - unnecessary_const
+   info - Unnecessary 'const' keyword. Try removing the keyword - lib\core\theme\neu_design_system.dart:352:26 - unnecessary_const
+   info - Unnecessary 'const' keyword. Try removing the keyword - lib\core\theme\neu_design_system.dart:353:27 - unnecessary_const
+  error - Expected to find ';' - lib\core\widgets\metric_card.dart:110:7 - expected_token
+warning - Dead code. Try removing the code, or fixing the code before it so that it can be reached - lib\core\widgets\metric_card.dart:110:8 - dead_code
+  error - Expected an identifier - lib\core\widgets\metric_card.dart:110:8 - missing_identifier
+  error - Expected to find ';' - lib\core\widgets\metric_card.dart:110:8 - expected_token
+  error - Unexpected text ';'. Try removing the text - lib\core\widgets\metric_card.dart:110:8 - unexpected_token
+  error - Expected an identifier - lib\core\widgets\metric_card.dart:111:5 - missing_identifier
+  error - Unexpected text ';'. Try removing the text - lib\core\widgets\metric_card.dart:111:5 - unexpected_token
+   info - Unnecessary empty statement. Try removing the empty statement or restructuring the code - lib\core\widgets\metric_card.dart:111:6 - empty_statements
+warning - Unused import: '../../../../core/theme/neu_design_system.dart'. Try removing the import directive - lib\features\calls\presentation\screens\active_call_screen.dart:11:8 - unused_import
+
+12 issues found. (ran in 13.7s)

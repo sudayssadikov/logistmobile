@@ -1,17 +1,22 @@
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+import os
 import time
 from typing import Any, Dict
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.api.v1.router import api_v1_router
 from app.config.settings import settings
 from app.core.exceptions import AppException
 from app.database.base import Base
 from app.database.seed import seed_database
 from app.database.session import engine
+from app.websocket.connection_manager import ws_manager
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Adds enterprise security headers to every HTTP response."""
@@ -34,13 +39,24 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure database schema is created and seed initial fixtures
+    # Ensure storage folder exists
+    os.makedirs(settings.STORAGE_DIR, exist_ok=True)
+    os.makedirs(os.path.join(settings.STORAGE_DIR, "voice"), exist_ok=True)
+    
+    # Startup: Ensure database schema is created
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    try:
-        await seed_database()
-    except Exception as e:
-        print(f"Notice on seed: {e}")
+        
+    # Seed ONLY in development environment
+    if settings.ENVIRONMENT == "development":
+        try:
+            await seed_database()
+        except Exception as e:
+            print(f"Notice on seed: {e}")
+            
+    # Initialize Redis Pub/Sub if configured
+    await ws_manager.init_redis()
+    
     yield
     # Shutdown: Close database pool
     await engine.dispose()
@@ -53,6 +69,18 @@ def create_application() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         lifespan=lifespan,
+    )
+
+        # Trusted Host Middleware
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
+    allowed_hosts = [h.strip() for h in settings.ALLOWED_HOSTS.split(",") if h.strip() and h.strip() != "*"]
+    if not allowed_hosts:
+        allowed_hosts = ["localhost", "127.0.0.1", "testserver"]
+    if "testserver" not in allowed_hosts:
+        allowed_hosts.append("testserver")
+    application.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=allowed_hosts,
     )
 
     # CORS Middleware
@@ -115,16 +143,45 @@ def create_application() -> FastAPI:
     application.include_router(api_v1_router, prefix="/v1")
     application.include_router(api_v1_router)
 
-    # Root Healthcheck
+    # Mount Static Uploads Folder
+    if os.path.exists(settings.STORAGE_DIR):
+        application.mount("/uploads", StaticFiles(directory=settings.STORAGE_DIR), name="uploads")
+
+    # Root Healthcheck & Monitoring
     @application.get("/health", tags=["Health"])
     @application.get("/", tags=["Health"])
     async def health_check() -> Dict[str, Any]:
+        from sqlalchemy import text
+        from app.database.session import AsyncSessionLocal
+        
+        db_status = "ok"
+        try:
+            async with AsyncSessionLocal() as session:
+                await session.execute(text("SELECT 1"))
+        except Exception as e:
+            db_status = f"unhealthy: {str(e)}"
+
+        redis_status = "disabled"
+        if settings.REDIS_URL:
+            try:
+                import redis.asyncio as aioredis
+                r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+                pong = await r.ping()
+                await r.aclose()
+                redis_status = "ok" if pong else "unreachable"
+            except Exception as e:
+                redis_status = f"unreachable: {str(e)}"
+
+        is_healthy = db_status == "ok"
         return {
-            "status": "healthy",
+            "status": "healthy" if is_healthy else "degraded",
             "service": settings.PROJECT_NAME,
             "version": settings.VERSION,
             "environment": settings.ENVIRONMENT,
+            "database": db_status,
+            "redis": redis_status,
             "docs": "/docs",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     return application

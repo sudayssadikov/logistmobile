@@ -11,15 +11,22 @@ abstract class AppConstants {
   static const String userProfileKey = 'logiflow_user_profile';
   static const String themeModeKey = 'logiflow_theme_mode';
   static const String languageKey = 'logiflow_language';
-
-  // State Engine Constants
-  static const int mockNetworkDelayMs = 400;
-  static const int gpsSimulationIntervalMs = 2500;
 }
 
+
 abstract class ApiEndpoints {
-  static const String baseUrl = 'https://api.logiflow.io/v1';
-  static const String wsUrl = 'wss://api.logiflow.io/v1/ws';
+  static const String baseUrl = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://localhost:8000/api/v1',
+  );
+  static const String wsUrl = String.fromEnvironment(
+    'WS_URL',
+    defaultValue: 'ws://localhost:8000/api/v1/ws',
+  );
+  static const String osrmUrl = String.fromEnvironment(
+    'OSRM_URL',
+    defaultValue: 'https://router.project-osrm.org',
+  );
 
   // Auth
   static const String login = '/auth/login';

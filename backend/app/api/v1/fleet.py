@@ -47,3 +47,35 @@ async def update_driver_status(
     service = FleetService(db)
     result = await service.update_driver_status(driver_id, req)
     return ApiResponse(data=result, message="Driver status updated")
+
+@router.post("/assign", response_model=ApiResponse[TruckModel])
+async def assign_driver(
+    truck_id: str,
+    driver_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = FleetService(db)
+    result = await service.assign_driver_to_truck(truck_id, driver_id)
+    return ApiResponse(data=result, message="Driver assigned to truck")
+
+@router.post("/unassign", response_model=ApiResponse[TruckModel])
+async def unassign_driver(
+    truck_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = FleetService(db)
+    result = await service.unassign_driver_from_truck(truck_id)
+    return ApiResponse(data=result, message="Driver unassigned from truck")
+
+@router.delete("/trucks/{truck_id}", response_model=ApiResponse[bool])
+async def delete_truck(
+    truck_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = FleetService(db)
+    await service.delete_truck(truck_id)
+    return ApiResponse(data=True, message="Truck deleted from fleet")
+

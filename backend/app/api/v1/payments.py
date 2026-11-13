@@ -11,6 +11,7 @@ from app.services.payment_service import PaymentService
 router = APIRouter(prefix="/payments", tags=["Payment Gateways"])
 
 @router.post("/intent", response_model=ApiResponse[PaymentResponse])
+@router.post("/create-intent", response_model=ApiResponse[PaymentResponse])
 async def create_payment_intent(
     req: PaymentCreateRequest,
     current_user: User = Depends(get_current_user),

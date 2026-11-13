@@ -83,69 +83,66 @@ class _SosRoadsideScreenState extends State<SosRoadsideScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SOS Yo\'lda Yordam & TIR Radar 🆘'),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      appBar: const NeuAppBar(
+        title: 'SOS Yo\'lda Yordam & TIR Radar',
+        showBack: true,
       ),
       body: BlocBuilder<SosBloc, SosState>(
         builder: (context, state) {
           return Column(
             children: [
-              // Top GPS Highway Radar Banner
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF991B1B), Color(0xFFDC2626)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.rose.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
+              // Top GPS Highway Radar Banner (Neumorphic)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: NeuCard(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurfacePressed : AppColors.lightSurfacePressed,
+                          shape: BoxShape.circle,
+                          boxShadow: NeuShadows.inset(isDark: isDark),
+                        ),
+                        child: const Icon(Icons.emergency_rounded, color: AppColors.rose, size: 24),
                       ),
-                      child: const Icon(Icons.emergency_rounded, color: Colors.white, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Sizning GPS nuqtangiz:',
-                            style: TextStyle(color: Colors.white70, fontSize: 11),
-                          ),
-                          const Text(
-                            'M39 trassasi, 210-km (Jizzax yaqinida)',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sizning GPS nuqtangiz:',
+                              style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                fontSize: 11,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Lat: ${state.currentLatitude.toStringAsFixed(4)} • Lng: ${state.currentLongitude.toStringAsFixed(4)}',
-                            style: const TextStyle(color: Colors.white60, fontSize: 10),
-                          ),
-                        ],
+                            Text(
+                              'M39 trassasi, 210-km',
+                              style: TextStyle(
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Lat: ${state.currentLatitude.toStringAsFixed(4)} • Lng: ${state.currentLongitude.toStringAsFixed(4)}',
+                              style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 

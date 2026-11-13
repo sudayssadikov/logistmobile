@@ -29,6 +29,17 @@ async def mark_all_as_read(
     await service.mark_all_as_read(current_user.id)
     return ApiResponse(data=True, message="All notifications marked as read")
 
+@router.patch("/{notif_id}/read", response_model=ApiResponse[bool])
+@router.post("/{notif_id}/read", response_model=ApiResponse[bool])
+async def mark_notification_as_read(
+    notif_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = NotificationService(db)
+    await service.mark_as_read(notif_id, current_user.id)
+    return ApiResponse(data=True, message="Notification marked as read")
+
 @router.post("/device-token", response_model=ApiResponse[bool])
 async def register_device_token(
     req: DeviceTokenRegister,
@@ -38,3 +49,4 @@ async def register_device_token(
     service = NotificationService(db)
     await service.register_device_token(current_user.id, req)
     return ApiResponse(data=True, message="Device token registered")
+

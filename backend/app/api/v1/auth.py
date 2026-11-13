@@ -121,6 +121,7 @@ async def get_security_settings(
     return ApiResponse(data=result, message="Security settings retrieved")
 
 @router.post("/logout-all-devices", response_model=ApiResponse[bool])
+@router.post("/sessions/terminate-others", response_model=ApiResponse[bool])
 async def logout_all_devices(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

@@ -312,7 +312,52 @@ class _NegotiationSheetWidgetState extends State<NegotiationSheetWidget> {
                 hint: '14,000,000',
                 keyboardType: TextInputType.number,
                 prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
+                onChanged: (_) => setState(() {}),
               ),
+              const SizedBox(height: 10),
+              // Live Commission Breakdown for Carrier
+              Builder(builder: (context) {
+                final inputAmount = double.tryParse(_counterController.text.replaceAll(',', '')) ?? widget.shipment.price;
+                final comm = ShipmentModel.calculatePlatformCommission(inputAmount);
+                final netPayout = (inputAmount - comm).clamp(0.0, double.infinity);
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurface : AppColors.lightSurfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('bidding.shipperPays'.tr(), style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+                          Text('${currencyFormatter.format(inputAmount)} UZS', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('bidding.platformFee'.tr(), style: const TextStyle(fontSize: 12, color: AppColors.rose)),
+                          Text('- ${currencyFormatter.format(comm)} UZS', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.rose)),
+                        ],
+                      ),
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('bidding.carrierWillReceive'.tr(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.emerald)),
+                          Text('${currencyFormatter.format(netPayout)} UZS', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.emerald)),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
               const SizedBox(height: 10),
               AppTextField(
                 controller: _commentController,

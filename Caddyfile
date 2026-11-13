@@ -1,0 +1,55 @@
+{
+    # Global options
+    email {$ACME_EMAIL:admin@logiflow.io}
+    admin off
+}
+
+{$DOMAIN_NAME:localhost} {
+    encode gzip zstd
+
+    # Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # API Endpoints -> Forward to FastAPI backend
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    # WebSockets (/ws and /api/v1/ws) -> Forward with WebSocket upgrade
+    handle /ws* {
+        reverse_proxy backend:8000
+    }
+
+    # Uploads Vault (Static media, voice notes, POD signatures)
+    handle /uploads/* {
+        root * /var/www
+        file_server
+    }
+
+    # OpenAPI Docs
+    handle /docs* {
+        reverse_proxy backend:8000
+    }
+    handle /redoc* {
+        reverse_proxy backend:8000
+    }
+    handle /openapi.json {
+        reverse_proxy backend:8000
+    }
+
+    # Health Check
+    handle /health {
+        reverse_proxy backend:8000
+    }
+
+    # Flutter Web Application SPA Fallback
+    handle {
+        reverse_proxy frontend:80
+    }
+}

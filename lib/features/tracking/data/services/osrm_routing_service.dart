@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../domain/models/tracking_data_model.dart';
 
 class OsrmRoutingService {
@@ -22,8 +23,9 @@ class OsrmRoutingService {
     required double destLng,
   }) async {
     try {
+      const baseUrl = ApiEndpoints.osrmUrl;
       final url =
-          'https://router.project-osrm.org/route/v1/driving/$originLng,$originLat;$destLng,$destLat?overview=full&geometries=geojson';
+          '$baseUrl/route/v1/driving/$originLng,$originLat;$destLng,$destLat?overview=full&geometries=geojson';
 
       final response = await _dio.get(url);
 

@@ -100,7 +100,13 @@ class ChatService:
         return results
 
     async def get_messages(self, channel_id: str, current_user_id: str) -> List[ChatMessageModel]:
-        messages = await self.message_repo.get_messages_for_channel(channel_id)
+        target_channel_id = channel_id
+        channel = await self.chat_repo.get_by_id(channel_id)
+        if not channel:
+            channel = await self.chat_repo.get_by_shipment_id(channel_id)
+            if channel:
+                target_channel_id = channel.id
+        messages = await self.message_repo.get_messages_for_channel(target_channel_id)
         return [self._to_message_model(m, current_user_id) for m in messages]
 
     async def send_message(self, channel_id: str, sender_id: str, req: SendMessageRequest) -> ChatMessageModel:

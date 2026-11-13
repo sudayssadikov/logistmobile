@@ -59,36 +59,12 @@ class AuthRepositoryImpl implements IAuthRepository {
             return ApiSuccess(user);
           }
         }
-      } catch (_) {
-        // Fallback gracefully to offline / local validation
+      } catch (e) {
+        return ApiFailure(message: 'Tizimga kirishda xatolik: ${e.toString()}');
       }
     }
 
-    // 2. Offline / Mock fallback
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    // Admin login: sudaysadmin / sudaysbrat1109
-    if (cleanInput == 'sudaysadmin') {
-      if (password != 'sudaysbrat1109') {
-        return const ApiFailure(message: 'Parol noto\'g\'ri kiritildi.');
-      }
-      await _storage.saveToken('jwt_token_${_sudaysAdmin.id}');
-      await _storage.saveRefreshToken('refresh_token_${_sudaysAdmin.id}');
-      await _storage.saveUserRole(_sudaysAdmin.role.key);
-      await _storage.saveUserProfile(_sudaysAdmin.toJson());
-      return const ApiSuccess(_sudaysAdmin);
-    }
-
-    final user = _registeredUsers[cleanInput];
-    if (user != null) {
-      await _storage.saveToken('jwt_token_${user.id}');
-      await _storage.saveRefreshToken('refresh_token_${user.id}');
-      await _storage.saveUserRole(user.role.key);
-      await _storage.saveUserProfile(user.toJson());
-      return ApiSuccess(user);
-    }
-
-    return const ApiFailure(message: 'Foydalanuvchi topilmadi. Iltimos, ro\'yxatdan o\'ting.');
+    return const ApiFailure(message: 'Serverga ulanish imkoni bo\'lmadi. Qayta urinib ko\'ring.');
   }
 
   @override

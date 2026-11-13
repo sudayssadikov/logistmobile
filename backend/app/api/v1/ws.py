@@ -32,19 +32,41 @@ async def websocket_endpoint(
             data = await websocket.receive_text()
             try:
                 msg = json.loads(data)
-                action = msg.get("action")
+                action = msg.get("action") or msg.get("type")
                 topic = msg.get("topic")
 
-                if action == "subscribe" and topic:
+                # WebRTC Audio Call Signaling Routing
+                if action in ["call_invite", "call_accept", "call_reject", "webrtc_offer", "webrtc_answer", "webrtc_ice_candidate", "call_end", "busy"]:
+                    target_user = msg.get("target_user_id") or msg.get("receiver_id") or msg.get("callee_id") or msg.get("caller_id")
+                    msg["from_user_id"] = user_id
+                    if target_user:
+                        await ws_manager.send_to_user(target_user, msg)
+                    elif shipment_id:
+                        await ws_manager.broadcast_to_topic(f"chat:{shipment_id}", msg)
+
+                # Real-time Chat events & persistence (typing, read_receipt, location_ping, chat_message)
+                elif action in ["typing", "read_receipt", "location_ping", "chat_message"]:
+                    chat_topic = topic or (f"chat:{shipment_id}" if shipment_id else msg.get("room_id"))
+                    if chat_topic:
+                        if not chat_topic.startswith("chat:"):
+                            chat_topic = f"chat:{chat_topic}"
+                        msg["sender_id"] = user_id
+                        await ws_manager.broadcast_to_topic(chat_topic, msg)
+
+                # Pub-Sub topics
+                elif action == "subscribe" and topic:
                     ws_manager.subscribe(websocket, topic)
                 elif action == "unsubscribe" and topic:
                     ws_manager.unsubscribe(websocket, topic)
                 elif action == "broadcast" and topic:
                     await ws_manager.broadcast_to_topic(topic, msg.get("payload"))
                 else:
-                    # Echo / acknowledge
                     await websocket.send_text(json.dumps({"status": "received", "data": msg}))
-            except Exception:
-                await websocket.send_text(json.dumps({"status": "echo", "raw": data}))
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"status": "error", "message": "Invalid JSON format"}))
+            except Exception as e:
+                await websocket.send_text(json.dumps({"status": "error", "message": str(e)}))
     except WebSocketDisconnect:
         ws_manager.disconnect_user(websocket, user_id)
+        # Broadcast offline presence
+        await ws_manager.broadcast_to_topic("presence", {"type": "presence", "user_id": user_id, "status": "offline"})

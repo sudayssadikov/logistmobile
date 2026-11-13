@@ -23,7 +23,51 @@ class AdminAnalyticsView extends StatelessWidget {
         final kpis = state.kpis;
         if (kpis == null) {
           return Center(
-            child: Text(state.errorMessage ?? 'Ma\'lumot yuklanmadi'),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: NeuCard(
+                borderRadius: 22,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.rose.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.cloud_off_rounded, color: AppColors.rose, size: 26),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Serverga ulanishda xatolik',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.errorMessage ?? 'Backend serverdan ma\'lumot olib bo\'lmadi.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    NeuButton(
+                      text: 'Qayta urinish',
+                      icon: Icons.refresh_rounded,
+                      width: 170,
+                      height: 44,
+                      onPressed: () {
+                        context.read<AdminDashboardBloc>().add(AdminFetchDashboardDataEvent());
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         }
 
@@ -36,25 +80,10 @@ class AdminAnalyticsView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top GMV & Commission Summary Banner
-                Container(
+                // Top GMV & Commission Summary Banner (Neumorphic)
+                NeuCard(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF090D16), Color(0xFF1E293B)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF334155)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 14,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
+                  borderRadius: 20,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -64,54 +93,46 @@ class AdminAnalyticsView extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                width: 10,
-                                height: 10,
+                                width: 8,
+                                height: 8,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: AppColors.emerald,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 'GLOBAL GMV & PLATFORM REVENUE',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.emerald,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                                   letterSpacing: 0.8,
                                 ),
                               ),
                             ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${kpis.systemUptimePercent}% UPTIME',
-                              style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.w700),
-                            ),
+                          NeuChip(
+                            label: '${kpis.systemUptimePercent}% UPTIME',
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Text(
                         '${currencyFormatter.format(kpis.totalGmv)} UZS',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                           letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Platforma Komissiya Daromadi (1.5%): ${currencyFormatter.format(kpis.totalRevenueCommission)} UZS',
-                        style: const TextStyle(
+                        'Platforma Komissiya Daromadi: ${currencyFormatter.format(kpis.totalRevenueCommission)} UZS',
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF94A3B8),
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -181,20 +202,16 @@ class AdminAnalyticsView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
+                NeuCard(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                  ),
+                  borderRadius: 16,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildMiniCounter('Yuk egalari', '${kpis.totalShippersCount}', AppColors.primary, isDark),
-                      _buildMiniCounter('Tashuvchilar', '${kpis.totalCarriersCount}', AppColors.indigo, isDark),
-                      _buildMiniCounter('Haydovchilar', '${kpis.activeDriversOnDuty}', AppColors.emerald, isDark),
-                      _buildMiniCounter('Bajarilgan', '${kpis.completedDeliveriesCount}', Colors.purpleAccent, isDark),
+                      _buildMiniCounter('Tashuvchilar', '${kpis.totalCarriersCount}', AppColors.neutral, isDark),
+                      _buildMiniCounter('Haydovchilar', '${kpis.activeDriversOnDuty}', AppColors.primary, isDark),
+                      _buildMiniCounter('Bajarilgan', '${kpis.completedDeliveriesCount}', AppColors.neutral, isDark),
                     ],
                   ),
                 ),

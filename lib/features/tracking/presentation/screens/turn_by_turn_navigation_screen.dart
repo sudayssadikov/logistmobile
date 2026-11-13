@@ -25,8 +25,10 @@ class _TurnByTurnNavigationScreenState extends State<TurnByTurnNavigationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Slate 900
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: BlocConsumer<NavigationBloc, NavigationState>(
         listener: (context, state) {
           if (state.spokenAlert != null) {
@@ -34,12 +36,12 @@ class _TurnByTurnNavigationScreenState extends State<TurnByTurnNavigationScreen>
               SnackBar(
                 content: Row(
                   children: [
-                    const Icon(Icons.volume_up_rounded, color: Colors.white, size: 20),
+                    Icon(Icons.volume_up_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary, size: 20),
                     const SizedBox(width: 8),
                     Expanded(child: Text('🔊 "${state.spokenAlert}"')),
                   ],
                 ),
-                backgroundColor: AppColors.primary,
+                backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
                 duration: const Duration(seconds: 3),
                 behavior: SnackBarBehavior.floating,
               ),
@@ -58,29 +60,22 @@ class _TurnByTurnNavigationScreenState extends State<TurnByTurnNavigationScreen>
 
           return Stack(
             children: [
-              // Simulated High-Contrast Night Highway Canvas
+              // High-Contrast Highway Canvas (Neumorphic map palette)
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _NavigationRoutePainter(),
+                  painter: _NavigationRoutePainter(isDark: isDark),
                 ),
               ),
 
-              // Top Turn Maneuver Direction Card
+              // Top Turn Maneuver Direction Card (Neumorphic)
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Column(
                     children: [
-                      Container(
+                      NeuCard(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withValues(alpha: 0.95),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24, width: 1.2),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black54, blurRadius: 16, offset: Offset(0, 4)),
-                          ],
-                        ),
+                        borderRadius: 20,
                         child: Row(
                           children: [
                             // Direction Arrow Icon
@@ -88,8 +83,9 @@ class _TurnByTurnNavigationScreenState extends State<TurnByTurnNavigationScreen>
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: AppColors.emerald.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(14),
+                                color: isDark ? AppColors.darkSurfacePressed : AppColors.lightSurfacePressed,
+                                shape: BoxShape.circle,
+                                boxShadow: NeuShadows.inset(isDark: isDark),
                               ),
                               child: Icon(
                                 maneuver.iconType == 'turn_right'
@@ -171,108 +167,120 @@ class _TurnByTurnNavigationScreenState extends State<TurnByTurnNavigationScreen>
                 ),
               ),
 
-              // Bottom Telemetry & Navigation Bar
+              // Bottom Telemetry & Navigation Bar (Neumorphic)
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1E293B),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black54, blurRadius: 16),
-                    ],
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // ETA Time
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('ETA (Kutilayotgan vaqt)', style: TextStyle(color: Colors.white60, fontSize: 10)),
-                                Text(
-                                  '${state.remainingMinutes ~/ 60}h ${state.remainingMinutes % 60}m',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: NeuCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    borderRadius: 24,
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // ETA Time
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'ETA (Kutilayotgan vaqt)',
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-
-                            // Remaining Distance
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                const Text('Qolgan masofa', style: TextStyle(color: Colors.white60, fontSize: 10)),
-                                Text(
-                                  '${state.remainingDistanceKm.toStringAsFixed(1)} km',
-                                  style: const TextStyle(
-                                    color: AppColors.cyan,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
+                                  Text(
+                                    '${state.remainingMinutes ~/ 60}h ${state.remainingMinutes % 60}m',
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
 
-                            // Current Speed
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text('Tezlik', style: TextStyle(color: Colors.white60, fontSize: 10)),
-                                Text(
-                                  '${state.currentSpeedKmh.toInt()} km/h',
-                                  style: const TextStyle(
-                                    color: AppColors.emerald,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
+                              // Remaining Distance
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Qolgan masofa',
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
+                                  Text(
+                                    '${state.remainingDistanceKm.toStringAsFixed(1)} km',
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
 
-                        // Route Progress Line
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: (1.0 - (state.remainingDistanceKm / 310.0)).clamp(0.05, 1.0),
-                            backgroundColor: Colors.white12,
-                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emerald),
-                            minHeight: 6,
+                              // Current Speed
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Tezlik',
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${state.currentSpeedKmh.toInt()} km/h',
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 14),
+                          const SizedBox(height: 14),
 
-                        // Exit / Close Navigation Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
-                            label: const Text('Navigatsiyani Yakunlash', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white12,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          // Route Progress Line
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: (1.0 - (state.remainingDistanceKm / 310.0)).clamp(0.05, 1.0),
+                              backgroundColor: isDark ? AppColors.darkSurfacePressed : AppColors.lightSurfacePressed,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isDark ? Colors.white : AppColors.primary,
+                              ),
+                              minHeight: 6,
                             ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Exit / Close Navigation Button
+                          NeuButton(
+                            text: 'Navigatsiyani Yakunlash',
+                            icon: Icons.close_rounded,
+                            variant: NeuButtonVariant.secondary,
+                            height: 44,
                             onPressed: () {
                               context.read<NavigationBloc>().add(EndNavigation());
                               Navigator.pop(context);
                             },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -286,24 +294,24 @@ class _TurnByTurnNavigationScreenState extends State<TurnByTurnNavigationScreen>
 }
 
 class _NavigationRoutePainter extends CustomPainter {
+  final bool isDark;
+
+  const _NavigationRoutePainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = const Color(0xFF0B1120);
+    final bgPaint = Paint()
+      ..color = isDark ? AppColors.darkBackground : AppColors.lightBackground;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
     // Highway Curve
     final highwayPaint = Paint()
-      ..color = const Color(0xFF1E293B)
+      ..color = isDark ? AppColors.darkSurfacePressed : AppColors.lightSurfacePressed
       ..strokeWidth = 48
       ..style = PaintingStyle.stroke;
 
-    final routeGlowPaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.4)
-      ..strokeWidth = 14
-      ..style = PaintingStyle.stroke;
-
     final routeLinePaint = Paint()
-      ..color = AppColors.cyan
+      ..color = isDark ? Colors.white : AppColors.primary
       ..strokeWidth = 8
       ..style = PaintingStyle.stroke;
 
@@ -319,18 +327,18 @@ class _NavigationRoutePainter extends CustomPainter {
       );
 
     canvas.drawPath(path, highwayPaint);
-    canvas.drawPath(path, routeGlowPaint);
     canvas.drawPath(path, routeLinePaint);
 
     // Truck Location Marker
-    final truckPaint = Paint()..color = AppColors.emerald;
-    canvas.drawCircle(Offset(size.width * 0.52, size.height * 0.75), 14, truckPaint);
+    final truckPaint = Paint()
+      ..color = isDark ? Colors.white : AppColors.primary;
+    canvas.drawCircle(Offset(size.width * 0.52, size.height * 0.75), 12, truckPaint);
 
     final truckBorder = Paint()
-      ..color = Colors.white
+      ..color = isDark ? AppColors.darkBackground : AppColors.lightBackground
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
-    canvas.drawCircle(Offset(size.width * 0.52, size.height * 0.75), 14, truckBorder);
+    canvas.drawCircle(Offset(size.width * 0.52, size.height * 0.75), 12, truckBorder);
   }
 
   @override

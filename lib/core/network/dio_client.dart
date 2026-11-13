@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../constants/app_constants.dart';
 import '../storage/local_storage_service.dart';
 import 'api_exceptions.dart';
 import 'auth_interceptor.dart';
@@ -7,12 +8,12 @@ class DioClient {
   late final Dio _dio;
 
   DioClient({
-    String baseUrl = 'http://localhost:8000/api/v1',
+    String? baseUrl,
     required ILocalStorageService storage,
   }) {
     _dio = Dio(
       BaseOptions(
-        baseUrl: baseUrl,
+        baseUrl: baseUrl ?? ApiEndpoints.baseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         sendTimeout: const Duration(seconds: 20),

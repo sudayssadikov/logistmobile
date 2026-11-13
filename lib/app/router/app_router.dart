@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../theme/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
+import '../../core/theme/neu_design_system.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -277,32 +279,32 @@ class _ScaffoldWithNavBar extends StatelessWidget {
     }
   }
 
-  List<BottomNavigationBarItem> _buildRoleItems(UserRole role) {
+  List<NeuNavItem> _buildRoleItems(UserRole role) {
     switch (role) {
       case UserRole.shipper:
         return [
-          BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home_rounded), label: 'nav.home'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.inventory_2_outlined), activeIcon: const Icon(Icons.inventory_2_rounded), label: 'nav.myLoads'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.shield_outlined), activeIcon: const Icon(Icons.shield_rounded), label: 'nav.escrow'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.chat_bubble_outline_rounded), activeIcon: const Icon(Icons.chat_bubble_rounded), label: 'nav.messages'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.person_outline_rounded), activeIcon: const Icon(Icons.person_rounded), label: 'nav.profile'.tr()),
+          NeuNavItem(icon: Icons.home_rounded, label: 'nav.home'.tr()),
+          NeuNavItem(icon: Icons.inventory_2_rounded, label: 'nav.myLoads'.tr()),
+          NeuNavItem(icon: Icons.shield_rounded, label: 'nav.escrow'.tr()),
+          NeuNavItem(icon: Icons.chat_bubble_rounded, label: 'nav.messages'.tr()),
+          NeuNavItem(icon: Icons.person_rounded, label: 'nav.profile'.tr()),
         ];
       case UserRole.admin:
         return [
-          BottomNavigationBarItem(icon: const Icon(Icons.admin_panel_settings_outlined), activeIcon: const Icon(Icons.admin_panel_settings_rounded), label: 'Admin'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.inventory_2_outlined), activeIcon: const Icon(Icons.inventory_2_rounded), label: 'nav.loads'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.account_balance_wallet_outlined), activeIcon: const Icon(Icons.account_balance_wallet_rounded), label: 'nav.escrow'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.chat_bubble_outline_rounded), activeIcon: const Icon(Icons.chat_bubble_rounded), label: 'nav.messages'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.person_outline_rounded), activeIcon: const Icon(Icons.person_rounded), label: 'nav.profile'.tr()),
+          const NeuNavItem(icon: Icons.admin_panel_settings_rounded, label: 'Admin'),
+          NeuNavItem(icon: Icons.inventory_2_rounded, label: 'nav.loads'.tr()),
+          NeuNavItem(icon: Icons.account_balance_wallet_rounded, label: 'nav.escrow'.tr()),
+          NeuNavItem(icon: Icons.chat_bubble_rounded, label: 'nav.messages'.tr()),
+          NeuNavItem(icon: Icons.person_rounded, label: 'nav.profile'.tr()),
         ];
       case UserRole.driver:
       case UserRole.carrier:
         return [
-          BottomNavigationBarItem(icon: const Icon(Icons.dashboard_outlined), activeIcon: const Icon(Icons.dashboard_rounded), label: 'nav.home'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.local_shipping_outlined), activeIcon: const Icon(Icons.local_shipping_rounded), label: 'nav.loadBoard'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.account_balance_wallet_outlined), activeIcon: const Icon(Icons.account_balance_wallet_rounded), label: 'nav.fleetWallet'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.chat_bubble_outline_rounded), activeIcon: const Icon(Icons.chat_bubble_rounded), label: 'nav.messages'.tr()),
-          BottomNavigationBarItem(icon: const Icon(Icons.person_outline_rounded), activeIcon: const Icon(Icons.person_rounded), label: 'nav.profile'.tr()),
+          NeuNavItem(icon: Icons.dashboard_rounded, label: 'nav.home'.tr()),
+          NeuNavItem(icon: Icons.local_shipping_rounded, label: 'nav.loadBoard'.tr()),
+          NeuNavItem(icon: Icons.account_balance_wallet_rounded, label: 'nav.fleetWallet'.tr()),
+          NeuNavItem(icon: Icons.chat_bubble_rounded, label: 'nav.messages'.tr()),
+          NeuNavItem(icon: Icons.person_rounded, label: 'nav.profile'.tr()),
         ];
     }
   }
@@ -311,13 +313,104 @@ class _ScaffoldWithNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<AuthBloc>().state.user;
     final role = user?.role ?? UserRole.shipper;
+    final navItems = _buildRoleItems(role);
+    final selectedIndex = _calculateSelectedIndex(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 850;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (isDesktop) {
+      return Scaffold(
+        body: Row(
+          children: [
+            Container(
+              width: 240,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white : AppColors.primary,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.local_shipping_rounded,
+                          color: isDark ? Colors.black : Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'LogiFlow',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : AppColors.primary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: navItems.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final item = navItems[index];
+                        final isSelected = index == selectedIndex;
+                        return NeuCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          borderRadius: 12,
+                          isPressed: isSelected,
+                          onTap: () => _onItemTapped(index, context),
+                          child: Row(
+                            children: [
+                              Icon(
+                                item.icon,
+                                size: 20,
+                                color: isSelected
+                                    ? (isDark ? Colors.white : AppColors.primary)
+                                    : (isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+                              ),
+                              const SizedBox(width: 14),
+                              Text(
+                                item.label,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected
+                                      ? (isDark ? Colors.white : AppColors.primary)
+                                      : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const VerticalDivider(width: 1, thickness: 1),
+            Expanded(child: child),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _calculateSelectedIndex(context),
+      bottomNavigationBar: NeuBottomNav(
+        currentIndex: selectedIndex,
         onTap: (index) => _onItemTapped(index, context),
-        items: _buildRoleItems(role),
+        items: navItems,
       ),
     );
   }

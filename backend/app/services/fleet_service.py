@@ -49,30 +49,6 @@ class FleetService:
 
     async def get_trucks(self) -> List[TruckModel]:
         vehicles = await self.vehicle_repo.get_all()
-        if not vehicles:
-            # Seed initial fleet trucks if empty
-            v1 = Vehicle(
-                plate_number="01 842 TAA",
-                model="MAN TGX 18.500 (2022)",
-                body_type=TruckBodyType.REFRIGERATED.value,
-                max_weight_tons=22.0,
-                max_volume_m3=86.0,
-                assigned_driver_name="Rustam Karimov",
-                is_available=True,
-            )
-            v2 = Vehicle(
-                plate_number="01 555 XYZ",
-                model="Scania R450 Streamline",
-                body_type=TruckBodyType.TENT.value,
-                max_weight_tons=24.0,
-                max_volume_m3=92.0,
-                assigned_driver_name="Nodirbek Qodirov",
-                is_available=True,
-            )
-            self.session.add_all([v1, v2])
-            await self.session.flush()
-            vehicles = [v1, v2]
-
         return [self._to_truck_model(v) for v in vehicles]
 
     async def create_truck(self, req: CreateTruckRequest) -> TruckModel:
@@ -89,33 +65,59 @@ class FleetService:
         await self.vehicle_repo.create(v)
         return self._to_truck_model(v)
 
+    async def delete_truck(self, truck_id: str) -> bool:
+        v = await self.vehicle_repo.get_by_id(truck_id)
+        if not v:
+            raise NotFoundError("Yuk mashinasi topilmadi.")
+        await self.session.delete(v)
+        await self.session.flush()
+        return True
+
+    async def assign_driver_to_truck(self, truck_id: str, driver_id: str) -> TruckModel:
+        truck = await self.vehicle_repo.get_by_id(truck_id)
+        if not truck:
+            raise NotFoundError("Yuk mashinasi topilmadi.")
+        driver = await self.user_repo.get_by_id(driver_id)
+        if not driver:
+            raise NotFoundError("Haydovchi topilmadi.")
+
+        truck.assigned_driver_id = driver.id
+        truck.assigned_driver_name = driver.full_name
+        truck.is_available = False
+
+        dp = await self.driver_repo.get_by_user_id(driver.id)
+        if not dp:
+            dp = DriverProfile(user_id=driver.id)
+            self.session.add(dp)
+        dp.assigned_truck_id = truck.id
+        dp.assigned_vehicle_plate = truck.plate_number
+        dp.status = DriverStatus.IN_TRANSIT.value
+
+        await self.session.flush()
+        return self._to_truck_model(truck)
+
+    async def unassign_driver_from_truck(self, truck_id: str) -> TruckModel:
+        truck = await self.vehicle_repo.get_by_id(truck_id)
+        if not truck:
+            raise NotFoundError("Yuk mashinasi topilmadi.")
+
+        if truck.assigned_driver_id:
+            dp = await self.driver_repo.get_by_user_id(truck.assigned_driver_id)
+            if dp:
+                dp.assigned_truck_id = None
+                dp.assigned_vehicle_plate = None
+                dp.status = DriverStatus.IDLE.value
+
+        truck.assigned_driver_id = None
+        truck.assigned_driver_name = None
+        truck.is_available = True
+
+        await self.session.flush()
+        return self._to_truck_model(truck)
+
     async def get_drivers(self) -> List[DriverModel]:
         drivers = await self.user_repo.get_all()
         driver_users = [u for u in drivers if u.role in [UserRole.DRIVER.value, UserRole.CARRIER.value]]
-        if not driver_users:
-            return [
-                DriverModel(
-                    id="DRV-1",
-                    fullName="Rustam Karimov",
-                    phone="+998 97 765 43 21",
-                    email="rustam.driver@logiflow.uz",
-                    rating=4.92,
-                    completedTrips=156,
-                    status=DriverStatus.IN_TRANSIT.value,
-                    assignedVehiclePlate="01 842 TAA (MAN TGX)",
-                ),
-                DriverModel(
-                    id="DRV-2",
-                    fullName="Nodirbek Qodirov",
-                    phone="+998 90 333 44 55",
-                    email="nodir.driver@logiflow.uz",
-                    rating=4.88,
-                    completedTrips=94,
-                    status=DriverStatus.IDLE.value,
-                    assignedVehiclePlate="01 555 XYZ (Scania)",
-                ),
-            ]
-
         results = []
         for u in driver_users:
             dp = await self.driver_repo.get_by_user_id(u.id)

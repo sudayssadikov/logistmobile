@@ -1,6 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.enums import LoadStatus
 from app.dependencies.auth import get_current_user, get_optional_current_user
 from app.dependencies.db import get_db
 from app.models.user import User
@@ -111,6 +112,33 @@ async def counter_bid(
     service = BidService(db)
     result = await service.counter_bid(shipment_id, bid_id, current_user.id, current_user.role, req)
     return ApiResponse(data=result, message="Counter offer sent")
+
+@router.post("/loads/{shipment_id}/cancel", response_model=ApiResponse[ShipmentModel])
+@router.post("/shipments/{shipment_id}/cancel", response_model=ApiResponse[ShipmentModel])
+async def cancel_load(
+    shipment_id: str,
+    reason: str = "User cancellation",
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ShipmentService(db)
+    shipment = await service.get_shipment_by_id(shipment_id)
+    
+    # If escrow is funded, trigger refund without commission
+    if shipment.is_escrow_funded:
+        escrow_service = EscrowService(db)
+        await escrow_service.refund_escrow(shipment_id, current_user.id, reason=reason)
+    else:
+        await service.advance_status(
+            shipment_id=shipment_id,
+            user_id=current_user.id,
+            user_role=current_user.role,
+            next_status=LoadStatus.CANCELLED,
+            comments=reason,
+        )
+
+    updated = await service.get_shipment_by_id(shipment_id)
+    return ApiResponse(data=updated, message="Shipment cancelled and escrow refunded to shipper")
 
 # AI Matcher
 @router.post("/loads/ai-match", response_model=ApiResponse[List[MatchedShipmentResponse]])

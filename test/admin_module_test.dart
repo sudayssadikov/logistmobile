@@ -40,29 +40,22 @@ void main() {
       expect(fromJson.systemUptimePercent, 99.99);
     });
 
-    test('Admin User directory returns only registered Sudays Admin', () async {
+    test('Admin User directory returns ApiFailure without mock data', () async {
       final usersRes = await adminRepository.getUsers();
-      expect(usersRes.dataOrNull?.isNotEmpty, isTrue);
-      final admin = usersRes.dataOrNull!.first;
-      expect(admin.fullName, 'Sudays Admin');
-      expect(admin.role, UserRole.admin);
+      expect(usersRes.isFailure, isTrue);
+      expect(usersRes.errorOrNull, isNotNull);
     });
 
-    test('User Suspension toggle updates state and creates audit log', () async {
-      final usersRes = await adminRepository.getUsers();
-      final targetUser = usersRes.dataOrNull!.first;
+    test('User Suspension toggle returns ApiFailure without mock data', () async {
       final suspendRes = await adminRepository.toggleUserStatus(
-        targetUser.id,
+        'USR-1',
         isSuspended: true,
         reason: 'Security check',
       );
-      expect(suspendRes.isSuccess, isTrue);
-
-      final auditLogs = await adminRepository.getAuditLogs();
-      expect(auditLogs.dataOrNull?.first.actionType, 'USER_SUSPEND');
+      expect(suspendRes.isFailure, isTrue);
     });
 
-    test('AdminDashboardBloc emits KPI metrics and audit logs', () async {
+    test('AdminDashboardBloc emits error when repository returns failure', () async {
       final bloc = AdminDashboardBloc(repository: adminRepository);
       bloc.add(AdminFetchDashboardDataEvent());
 
@@ -70,13 +63,15 @@ void main() {
         bloc.stream,
         emitsInOrder([
           isA<AdminDashboardState>().having((s) => s.isLoading, 'isLoading', true),
-          isA<AdminDashboardState>().having((s) => s.kpis?.activeLoadsInTransit, 'activeLoadsInTransit', 24),
+          isA<AdminDashboardState>()
+              .having((s) => s.isLoading, 'isLoading', false)
+              .having((s) => s.errorMessage, 'errorMessage', isNotNull),
         ]),
       );
       bloc.close();
     });
 
-    test('UserModerationBloc emits user directory', () async {
+    test('UserModerationBloc emits error state when repository fails', () async {
       final bloc = UserModerationBloc(repository: adminRepository);
       bloc.add(const FetchModerationDataEvent());
 
@@ -84,7 +79,9 @@ void main() {
         bloc.stream,
         emitsInOrder([
           isA<UserModerationState>().having((s) => s.isLoading, 'isLoading', true),
-          isA<UserModerationState>().having((s) => s.users.isNotEmpty, 'users.isNotEmpty', true),
+          isA<UserModerationState>()
+              .having((s) => s.isLoading, 'isLoading', false)
+              .having((s) => s.users.isEmpty, 'users.isEmpty', true),
         ]),
       );
       bloc.close();

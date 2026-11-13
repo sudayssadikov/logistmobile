@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # 1. FastAPI Backend API
   api:
     build:
       context: .
@@ -8,40 +9,43 @@ services:
     container_name: logiflow_api
     restart: always
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
+    env_file:
+      - .env
     environment:
-      - ENVIRONMENT=production
-      - DEBUG=false
-      - DATABASE_URL=postgresql+asyncpg://logiflow_user:logiflow_secret_password@postgres:5432/logiflow_db
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-logiflow_user}:${POSTGRES_PASSWORD:-logiflow_secret_password}@postgres:5432/${POSTGRES_DB:-logiflow_db}
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=generate_a_very_secure_secret_key_in_production
-      - API_V1_STR=/api/v1
+      - S3_ENDPOINT_URL=http://minio:9000
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     volumes:
       - upload_data:/app/uploads
 
+  # 2. PostgreSQL 16
   postgres:
     image: postgres:16-alpine
     container_name: logiflow_postgres
     restart: always
     environment:
-      - POSTGRES_USER=logiflow_user
-      - POSTGRES_PASSWORD=logiflow_secret_password
-      - POSTGRES_DB=logiflow_db
+      - POSTGRES_USER=${POSTGRES_USER:-logiflow_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-logiflow_secret_password}
+      - POSTGRES_DB=${POSTGRES_DB:-logiflow_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U logiflow_user -d logiflow_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-logiflow_user} -d ${POSTGRES_DB:-logiflow_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # 3. Redis 7
   redis:
     image: redis:7-alpine
     container_name: logiflow_redis
@@ -56,7 +60,46 @@ services:
       timeout: 5s
       retries: 5
 
+  # 4. MinIO S3 Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: logiflow_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY:-logiflow_minio_admin}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY:-logiflow_minio_secret_2026}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 5. Coturn STUN/TURN WebRTC Server
+  coturn:
+    image: coturn/coturn:latest
+    container_name: logiflow_coturn
+    restart: always
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+    command:
+      - "-n"
+      - "--log-file=stdout"
+      - "--listening-port=3478"
+      - "--realm=${COTURN_REALM:-logiflow.io}"
+      - "--use-auth-secret"
+      - "--static-auth-secret=${COTURN_SECRET:-logiflow_turn_secret_key_prod_2026}"
+      - "--fingerprint"
+      - "--lt-cred-mech"
+
 volumes:
   postgres_data:
   redis_data:
+  minio_data:
   upload_data:

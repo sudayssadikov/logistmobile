@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/neu_design_system.dart';
+import '../../../../core/theme/neu_shadows.dart';
 import '../../../../core/widgets/app_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -58,23 +60,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         title: 'onboarding.slide1Title'.tr(),
         subtitle: 'onboarding.slide1Subtitle'.tr(),
         icon: Icons.hub_rounded,
-        accentColor: AppColors.primary,
+        accentColor: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       ),
       _OnboardingItem(
         title: 'onboarding.slide2Title'.tr(),
         subtitle: 'onboarding.slide2Subtitle'.tr(),
         icon: Icons.security_rounded,
-        accentColor: AppColors.emerald,
+        accentColor: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       ),
       _OnboardingItem(
         title: 'onboarding.slide3Title'.tr(),
         subtitle: 'onboarding.slide3Subtitle'.tr(),
         icon: Icons.navigation_rounded,
-        accentColor: AppColors.cyan,
+        accentColor: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       ),
     ];
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -87,15 +90,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Row(
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(8),
+                          color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: NeuShadows.elevation(isDark: isDark, blur: 8, offset: 3),
                         ),
-                        child: const Icon(Icons.local_shipping_rounded, color: Colors.white, size: 18),
+                        child: Icon(Icons.local_shipping_rounded, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary, size: 20),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Text(
                         'common.appName'.tr(),
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
@@ -153,8 +157,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           height: 140,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: item.accentColor.withValues(alpha: 0.12),
-                            border: Border.all(color: item.accentColor.withValues(alpha: 0.3), width: 2),
+                            color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                            boxShadow: NeuShadows.elevation(isDark: isDark, blur: 20, offset: 10),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2A2D31) : Colors.white.withValues(alpha: 0.8),
+                              width: 2,
+                            ),
                           ),
                           child: Center(
                             child: Icon(item.icon, size: 64, color: item.accentColor),
@@ -204,7 +212,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 8,
                         decoration: BoxDecoration(
                           color: _currentPage == index
-                              ? AppColors.primary
+                              ? (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)
                               : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -212,9 +220,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  AppButton(
+                  NeuButton(
                     text: _currentPage == slides.length - 1 ? 'auth.getStarted'.tr() : 'common.next'.tr(),
-                    suffixIcon: Icons.arrow_forward_rounded,
+                    isPrimary: true,
+                    icon: Icons.arrow_forward_rounded,
                     onPressed: () {
                       if (_currentPage < slides.length - 1) {
                         _pageController.nextPage(

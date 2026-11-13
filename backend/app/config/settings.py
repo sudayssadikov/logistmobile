@@ -20,13 +20,13 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # Security
-    SECRET_KEY: str = "9f82d8c3b4a5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1"
+    SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./logiflow.db"
+    DATABASE_URL: str
     DB_ECHO: bool = False
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 10
@@ -34,9 +34,28 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: Optional[str] = None
 
-    # CORS
-    CORS_ORIGINS: str = "*"
-    ALLOWED_HOSTS: str = "*"
+    # Eskiz.uz SMS Gateway
+    ESKIZ_EMAIL: Optional[str] = None
+    ESKIZ_PASSWORD: Optional[str] = None
+    ESKIZ_FROM: str = "4546"
+
+    # Coturn WebRTC STUN/TURN Server
+    COTURN_HOST: str = "coturn"
+    COTURN_PORT: int = 3478
+    COTURN_REALM: str = "logiflow.io"
+    COTURN_SECRET: str
+    STUN_SERVER_URL: str = "stun:stun.l.google.com:19302"
+
+    # CORS & Hosts (Explicit domains only, no wildcards)
+    CORS_ORIGINS: str
+    ALLOWED_HOSTS: str
+
+    # Platform Carrier Commission Tiers (Configurable via .env or DB)
+    COMMISSION_TIER_1_LIMIT: float = 2000000.0  # <= 2,000,000 UZS
+    COMMISSION_TIER_1_FEE: float = 30000.0      # 30,000 UZS
+    COMMISSION_TIER_2_LIMIT: float = 5000000.0  # <= 5,000,000 UZS
+    COMMISSION_TIER_2_FEE: float = 50000.0      # 50,000 UZS
+    COMMISSION_TIER_3_FEE: float = 70000.0      # > 5,000,000 UZS -> 70,000 UZS
 
     # Storage (Local & S3 / MinIO Cloud Object Storage)
     STORAGE_DIR: str = "./uploads"
@@ -56,9 +75,9 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        if not self.CORS_ORIGINS or self.CORS_ORIGINS == "*":
-            return ["*"]
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        if not self.CORS_ORIGINS or self.CORS_ORIGINS.strip() == "*":
+            raise ValueError("Wildcard CORS_ORIGINS '*' is forbidden in production. Provide explicit comma-separated domains.")
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip() and origin.strip() != "*"]
 
     @property
     def is_sqlite(self) -> bool:

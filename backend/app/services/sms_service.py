@@ -21,8 +21,11 @@ class SmsService:
         """Dispatches an SMS message through Eskiz.uz or logs in development."""
         clean_phone = phone.replace("+", "").replace(" ", "")
         
-        # If in development or mock mode, log OTP
-        logger.info(f"[SMS Gateway] Dispatched SMS to {clean_phone}: '{message}'")
+        # If in development, log OTP; in production, keep code private for security
+        if settings.ENVIRONMENT == "development":
+            logger.info(f"[SMS Gateway] Dispatched SMS to {clean_phone}: '{message}'")
+        else:
+            logger.info(f"[SMS Gateway] Dispatched SMS to {clean_phone}: [REDACTED IN PRODUCTION]")
         
         # If Eskiz credentials are configured in environment, dispatch HTTP request
         eskiz_email = getattr(settings, "ESKIZ_EMAIL", None)

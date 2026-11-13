@@ -1,6 +1,5 @@
 import '../../../../core/network/api_result.dart';
 import '../../../../core/network/dio_client.dart';
-import '../../../../features/auth/domain/models/user_model.dart';
 import '../../domain/models/admin_dispute_model.dart';
 import '../../domain/models/admin_kpi_model.dart';
 import '../../domain/models/admin_user_item_model.dart';
@@ -8,6 +7,7 @@ import '../../domain/models/audit_log_entry_model.dart';
 import '../../domain/models/escrow_ledger_item_model.dart';
 import '../../domain/models/verification_request_model.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../../../../features/auth/domain/models/user_model.dart';
 
 class AdminRepositoryImpl implements IAdminRepository {
   final DioClient? _dioClient;
@@ -16,197 +16,219 @@ class AdminRepositoryImpl implements IAdminRepository {
 
   DioClient? get dioClient => _dioClient;
 
-  // In-Memory state caches
-  final List<VerificationRequestModel> _verifications = [];
-
-  final List<AdminUserItemModel> _users = [
-    AdminUserItemModel(
-      id: 'USR-ADMIN-001',
-      fullName: 'Sudays Admin',
-      emailOrPhone: 'sudaysadmin',
-      role: UserRole.admin,
-      companyName: 'LogiFlow Supreme Control Tower',
-      isVerified: true,
-      isSuspended: false,
-      rating: 5.0,
-      completedTrips: 1500,
-      walletBalance: 150000000.0,
-      registeredAt: DateTime.now(),
-      lastActiveDevice: 'Admin Web Terminal',
-    ),
-  ];
-
-  final List<EscrowLedgerItemModel> _escrowItems = [];
-
-  final List<AdminDisputeCaseModel> _disputes = [];
-
-  final List<AuditLogEntryModel> _auditLogs = [];
-
   @override
   Future<ApiResult<AdminKpiModel>> getKpis() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return const ApiSuccess(
-      AdminKpiModel(
-        totalGmv: 4850000000.0,
-        totalRevenueCommission: 72750000.0,
-        activeLoadsInTransit: 24,
-        pendingBidsCount: 18,
-        completedDeliveriesCount: 1540,
-        totalShippersCount: 380,
-        totalCarriersCount: 290,
-        activeDriversOnDuty: 142,
-        totalEscrowHeld: 540000000.0,
-        totalPayoutsReleased: 4310000000.0,
-        systemUptimePercent: 99.99,
-        openDisputesCount: 2,
-        pendingKycCount: 3,
-      ),
-    );
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.get('/admin/stats');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return ApiSuccess(AdminKpiModel.fromJson(data));
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'KPI ma\'lumotlarini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<List<VerificationRequestModel>>> getPendingVerifications() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiSuccess(List.unmodifiable(_verifications));
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.get('/admin/verifications');
+      if (response.statusCode == 200 && response.data != null) {
+        final List raw = response.data['data'] ?? [];
+        final items = raw.map((e) => VerificationRequestModel.fromJson(e as Map<String, dynamic>)).toList();
+        return ApiSuccess(items);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Verifikatsiya ro\'yxatini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<bool>> moderateVerification(String id, VerificationStatus status, {String? reason}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final index = _verifications.indexWhere((v) => v.id == id);
-    if (index != -1) {
-      _verifications[index] = _verifications[index].copyWith(
-        status: status,
-        rejectionReason: reason,
-      );
-      _auditLogs.insert(
-        0,
-        AuditLogEntryModel(
-          id: 'LOG-${DateTime.now().millisecondsSinceEpoch}',
-          actorId: 'USR-ADMIN-001',
-          actorName: 'Sudays Admin',
-          targetId: id,
-          actionType: 'KYC_MODERATION',
-          description: 'Hujjat holati ${status.label} ga o\'zgartirildi${reason != null ? ': $reason' : ''}.',
-          ipAddress: '127.0.0.1',
-          deviceFingerprint: 'Admin Web Workspace',
-          timestamp: DateTime.now(),
-        ),
-      );
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
     }
-    return const ApiSuccess(true);
+    try {
+      final response = await _dioClient!.patch(
+        '/admin/verifications/$id',
+        data: {'status': status.key, 'reason': reason},
+      );
+      if (response.statusCode == 200) {
+        return const ApiSuccess(true);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Moderatsiya bajarilmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<List<AdminUserItemModel>>> getUsers({String? search, UserRole? roleFilter}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    var list = _users;
-    if (roleFilter != null) {
-      list = list.where((u) => u.role == roleFilter).toList();
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
     }
-    if (search != null && search.isNotEmpty) {
-      final q = search.toLowerCase();
-      list = list.where((u) => u.fullName.toLowerCase().contains(q) || u.emailOrPhone.toLowerCase().contains(q)).toList();
+    try {
+      final queryParams = <String, dynamic>{};
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (roleFilter != null) queryParams['role'] = roleFilter.key;
+
+      final response = await _dioClient!.get('/admin/users', queryParameters: queryParams);
+      if (response.statusCode == 200 && response.data != null) {
+        final List raw = response.data['data'] ?? [];
+        final items = raw.map((e) => AdminUserItemModel.fromJson(e as Map<String, dynamic>)).toList();
+        return ApiSuccess(items);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Foydalanuvchilar ro\'yxatini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
     }
-    return ApiSuccess(List.unmodifiable(list));
   }
 
   @override
   Future<ApiResult<bool>> toggleUserStatus(String userId, {required bool isSuspended, String? reason}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final index = _users.indexWhere((u) => u.id == userId);
-    if (index != -1) {
-      _users[index] = _users[index].copyWith(isSuspended: isSuspended);
-      _auditLogs.insert(
-        0,
-        AuditLogEntryModel(
-          id: 'LOG-${DateTime.now().millisecondsSinceEpoch}',
-          actorId: 'USR-ADMIN-001',
-          actorName: 'Sudays Admin',
-          targetId: userId,
-          actionType: isSuspended ? 'USER_SUSPEND' : 'USER_UNSUSPEND',
-          description: '${_users[index].fullName} hisobi ${isSuspended ? "bloklandi" : "faollashtirildi"}${reason != null ? ': $reason' : ''}.',
-          ipAddress: '127.0.0.1',
-          deviceFingerprint: 'Admin Web Workspace',
-          timestamp: DateTime.now(),
-        ),
-      );
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
     }
-    return const ApiSuccess(true);
+    try {
+      final response = await _dioClient!.patch(
+        '/admin/users/$userId/status',
+        data: {'is_suspended': isSuspended, 'reason': reason},
+      );
+      if (response.statusCode == 200) {
+        return const ApiSuccess(true);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Foydalanuvchi holatini o\'zgartirib bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<List<EscrowLedgerItemModel>>> getEscrowLedger() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiSuccess(List.unmodifiable(_escrowItems));
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.get('/admin/escrow-ledger');
+      if (response.statusCode == 200 && response.data != null) {
+        final List raw = response.data['data'] ?? [];
+        final items = raw.map((e) => EscrowLedgerItemModel.fromJson(e as Map<String, dynamic>)).toList();
+        return ApiSuccess(items);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Eskrou jurnalini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<bool>> executeEscrowIntervention(String escrowId, EscrowInterventionAction action) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final index = _escrowItems.indexWhere((e) => e.id == escrowId);
-    if (index != -1) {
-      String newStatus = 'HOLD';
-      if (action == EscrowInterventionAction.freezeHold) newStatus = 'FROZEN';
-      if (action == EscrowInterventionAction.forceRelease) newStatus = 'RELEASED';
-      if (action == EscrowInterventionAction.refundShipper) newStatus = 'REFUNDED';
-
-      _escrowItems[index] = _escrowItems[index].copyWith(status: newStatus);
-      _auditLogs.insert(
-        0,
-        AuditLogEntryModel(
-          id: 'LOG-${DateTime.now().millisecondsSinceEpoch}',
-          actorId: 'USR-ADMIN-001',
-          actorName: 'Sudays Admin',
-          targetId: escrowId,
-          actionType: 'ESCROW_INTERVENTION',
-          description: 'Eskrou operatsiyasi: ${action.label}. Yangi holat: $newStatus.',
-          ipAddress: '127.0.0.1',
-          deviceFingerprint: 'Admin Web Workspace',
-          timestamp: DateTime.now(),
-        ),
-      );
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
     }
-    return const ApiSuccess(true);
+    try {
+      final response = await _dioClient!.post(
+        '/admin/escrow-ledger/$escrowId/intervene',
+        data: {'action': action.key},
+      );
+      if (response.statusCode == 200) {
+        return const ApiSuccess(true);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Eskrou aralashuvi bajarilmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<List<AdminDisputeCaseModel>>> getDisputes() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiSuccess(List.unmodifiable(_disputes));
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.get('/disputes');
+      if (response.statusCode == 200 && response.data != null) {
+        final List raw = response.data['data'] ?? [];
+        final items = raw.map((e) {
+          final m = e as Map<String, dynamic>;
+          return AdminDisputeCaseModel(
+            id: m['id'] ?? '',
+            shipmentId: m['shipment_id'] ?? '',
+            trackingCode: m['tracking_code'] ?? 'LF-UZ',
+            complainantName: m['claimant_name'] ?? 'Da\'vogar',
+            respondentName: m['respondent_name'] ?? 'Javobgar',
+            category: DisputeCategory.fromKey(m['category'] as String?),
+            disputedAmount: (m['claimed_amount'] as num?)?.toDouble() ?? 0.0,
+            description: m['reason'] ?? '',
+            shipperManifestUrl: m['manifest_url'] ?? '',
+            podEvidencePhotos: List<String>.from(m['evidence_urls'] ?? []),
+            status: m['status'] ?? 'OPEN',
+            createdAt: DateTime.tryParse(m['created_at'] ?? '') ?? DateTime.now(),
+          );
+        }).toList();
+        return ApiSuccess(items);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Nizolarni yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<bool>> resolveDispute(String disputeId, DisputeVerdict verdict, {String? reason}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final index = _disputes.indexWhere((d) => d.id == disputeId);
-    if (index != -1) {
-      _disputes[index] = _disputes[index].copyWith(
-        status: 'RESOLVED',
-        finalVerdict: verdict,
-        resolutionNotes: reason,
-      );
-      _auditLogs.insert(
-        0,
-        AuditLogEntryModel(
-          id: 'LOG-${DateTime.now().millisecondsSinceEpoch}',
-          actorId: 'USR-ADMIN-001',
-          actorName: 'Sudays Admin',
-          targetId: disputeId,
-          actionType: 'DISPUTE_VERDICT',
-          description: 'Nizo arbitraj qarori qabul qilindi: ${verdict.label}${reason != null ? ' ($reason)' : ''}.',
-          ipAddress: '127.0.0.1',
-          deviceFingerprint: 'Admin Web Workspace',
-          timestamp: DateTime.now(),
-        ),
-      );
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
     }
-    return const ApiSuccess(true);
+    try {
+      final response = await _dioClient!.post(
+        '/disputes/$disputeId/resolve',
+        data: {'resolution': verdict.key, 'admin_notes': reason},
+      );
+      if (response.statusCode == 200) {
+        return const ApiSuccess(true);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Nizoni hal qilib bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<List<AuditLogEntryModel>>> getAuditLogs({String? category}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiSuccess(List.unmodifiable(_auditLogs));
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Tarmoq mijozi mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.get('/admin/audit-logs');
+      if (response.statusCode == 200 && response.data != null) {
+        final List raw = response.data['data'] ?? [];
+        final items = raw.map((e) {
+          final m = e as Map<String, dynamic>;
+          return AuditLogEntryModel(
+            id: m['id'] ?? '',
+            actorId: m['user_id'] ?? 'SYS',
+            actorName: 'Administrator',
+            targetId: m['resource_id'] ?? '',
+            actionType: m['action'] ?? '',
+            description: '${m['resource_type']}: ${m['action']}',
+            ipAddress: m['ip_address'] ?? '127.0.0.1',
+            deviceFingerprint: 'Web Admin',
+            timestamp: DateTime.tryParse(m['created_at'] ?? '') ?? DateTime.now(),
+          );
+        }).toList();
+        return ApiSuccess(items);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Audit jurnalini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
+    }
   }
 }

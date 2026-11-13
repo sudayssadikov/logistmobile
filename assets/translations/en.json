@@ -57,10 +57,10 @@
     "emailOrUsername": "Email or Username",
     "password": "Password",
     "phoneNumber": "Phone Number",
-    "smsCode": "SMS Code (Demo: 1234)",
+    "smsCode": "SMS Verification Code",
     "signInAs": "Sign In as",
     "biometricSignIn": "Biometric Sign-In (FaceID / Fingerprint)",
-    "demoHint": "Demo Mode: Fast one-tap login available for all 4 enterprise roles.",
+    "demoHint": "Security: Enter the verification code sent to your mobile phone.",
     "sendCode": "Send Verification Code",
     "verifyAndSignIn": "Verify & Sign In",
     "resendCode": "Resend Code",
@@ -453,5 +453,22 @@
     "endCall": "End Call",
     "accept": "Accept",
     "decline": "Decline"
+  },
+  "bidding": {
+    "title": "Freight Bids & Offers",
+    "negotiateRate": "Submit Offer Rate",
+    "yourOffer": "Your Offer (UZS)",
+    "offerComment": "Terms or conditions",
+    "submitOffer": "Submit Bid",
+    "counterBack": "Counter Offer",
+    "acceptOffer": "Accept",
+    "statusPending": "Pending",
+    "statusAccepted": "Accepted",
+    "statusDeclined": "Declined",
+    "statusCountered": "Countered",
+    "platformFee": "Platform Service Fee",
+    "carrierWillReceive": "You Will Receive (Net Payout)",
+    "shipperPays": "Shipper Pays",
+    "feeTierNote": "Fixed platform commission is deducted only upon successful delivery"
   }
 }

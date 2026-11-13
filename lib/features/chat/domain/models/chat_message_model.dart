@@ -192,6 +192,59 @@ class ChatMessageModel extends Equatable {
     );
   }
 
+  factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
+    return ChatMessageModel(
+      id: json['id'] as String? ?? 'MSG-${DateTime.now().millisecondsSinceEpoch}',
+      channelId: json['channelId'] as String? ?? json['channel_id'] as String? ?? '',
+      senderId: json['senderId'] as String? ?? json['sender_id'] as String? ?? '',
+      senderName: json['senderName'] as String? ?? json['sender_name'] as String? ?? 'User',
+      senderRole: UserRole.values.firstWhere(
+        (r) => r.name.toLowerCase() == (json['senderRole'] ?? json['sender_role'] ?? '').toString().toLowerCase(),
+        orElse: () => UserRole.shipper,
+      ),
+      type: MessageType.values.firstWhere(
+        (t) => t.name.toLowerCase() == (json['type'] ?? '').toString().toLowerCase(),
+        orElse: () => MessageType.text,
+      ),
+      content: json['content'] as String? ?? '',
+      timestamp: json['timestamp'] != null
+          ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      isMine: json['isMine'] as bool? ?? json['is_mine'] as bool? ?? false,
+      status: MessageStatus.values.firstWhere(
+        (s) => s.name.toLowerCase() == (json['status'] ?? '').toString().toLowerCase(),
+        orElse: () => MessageStatus.read,
+      ),
+      reactions: json['reactions'] != null ? Map<String, int>.from(json['reactions'] as Map) : const {},
+      isEdited: json['isEdited'] as bool? ?? json['is_edited'] as bool? ?? false,
+      isDeleted: json['isDeleted'] as bool? ?? json['is_deleted'] as bool? ?? false,
+      voicePayload: json['voicePayload'] != null
+          ? VoiceNotePayload(
+              durationSeconds: json['voicePayload']['durationSeconds'] as int? ?? 3,
+              audioUrl: json['content'] as String?,
+            )
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'channelId': channelId,
+      'senderId': senderId,
+      'senderName': senderName,
+      'senderRole': senderRole.name,
+      'type': type.name,
+      'content': content,
+      'timestamp': timestamp.toIso8601String(),
+      'isMine': isMine,
+      'status': status.name,
+      'reactions': reactions,
+      'isEdited': isEdited,
+      'isDeleted': isDeleted,
+    };
+  }
+
   @override
   List<Object?> get props => [
         id,
@@ -224,7 +277,7 @@ class ChatChannelModel extends Equatable {
   final int unreadCount;
   final List<String> participantNames;
   final bool isOnline;
-  final String? typingIndicator; // e.g. 'typing...', 'recording audio...'
+  final String? typingIndicator;
 
   const ChatChannelModel({
     required this.id,
@@ -238,6 +291,24 @@ class ChatChannelModel extends Equatable {
     this.isOnline = true,
     this.typingIndicator,
   });
+
+  factory ChatChannelModel.fromJson(Map<String, dynamic> json) {
+    return ChatChannelModel(
+      id: json['id'] as String? ?? '',
+      shipmentId: json['shipmentId'] as String? ?? json['shipment_id'] as String? ?? '',
+      shipmentTitle: json['shipmentTitle'] as String? ?? json['shipment_title'] as String? ?? 'Shipment',
+      trackingCode: json['trackingCode'] as String? ?? json['tracking_code'] as String? ?? 'TRK-001',
+      lastMessage: json['lastMessage'] as String? ?? json['last_message'] as String? ?? '',
+      lastMessageTime: json['lastMessageTime'] != null
+          ? DateTime.tryParse(json['lastMessageTime'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      unreadCount: json['unreadCount'] as int? ?? json['unread_count'] as int? ?? 0,
+      participantNames: json['participantNames'] != null
+          ? List<String>.from(json['participantNames'] as List)
+          : const [],
+      isOnline: json['isOnline'] as bool? ?? json['is_online'] as bool? ?? true,
+    );
+  }
 
   ChatChannelModel copyWith({
     String? id,

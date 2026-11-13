@@ -94,7 +94,7 @@ class LogiFlowApp extends StatelessWidget {
             ],
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.dark, // Default to dark Linear/Stripe high-end SaaS aesthetic
+            themeMode: ThemeMode.light, // Default to Neumorphism Light mode
             routerConfig: AppRouter.router,
           );
         },

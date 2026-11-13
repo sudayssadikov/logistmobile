@@ -73,25 +73,10 @@ class AdminDashboardView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // System Live Status & Control Tower Banner
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF334155)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+              // System Live Status & Control Tower Banner (Neumorphic)
+              NeuCard(
+                padding: const EdgeInsets.all(18),
+                borderRadius: 18,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -134,20 +119,20 @@ class AdminDashboardView extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Barcha yuklar, transportlar va pul oqimlari nazorati',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'O\'zbekiston bo\'ylab barcha yuk tashish jarayonlarini real vaqtda kuzatish va boshqarish paneli.',
                       style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF94A3B8),
+                        fontSize: 12,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                         height: 1.4,
                       ),
                     ),
@@ -161,6 +146,17 @@ class AdminDashboardView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildKpiCard(
+                      title: 'Platforma Daromadi (Revenue)',
+                      value: '18,450,000 UZS',
+                      subtitle: 'Sof yig\'ilgan komissiya',
+                      color: AppColors.emerald,
+                      icon: Icons.account_balance_wallet_rounded,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildKpiCard(
                       title: 'Eskrou Jamg\'armasi',
                       value: '540,000,000 UZS',
                       subtitle: '100% Kafolatlangan',
@@ -169,18 +165,73 @@ class AdminDashboardView extends StatelessWidget {
                       isDark: isDark,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildKpiCard(
-                      title: 'Yo\'ldagi Furorlar',
-                      value: '24 ta faol reys',
-                      subtitle: 'Jonli GPS monitoring',
-                      color: AppColors.emerald,
-                      icon: Icons.local_shipping_rounded,
-                      isDark: isDark,
-                    ),
-                  ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              // Commission Tiers Status Banner
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.tune_rounded, size: 16, color: AppColors.primary),
+                            SizedBox(width: 6),
+                            Text(
+                              'Faol Platforma Komissiya Tariflari',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                        InkWell(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Komissiyadan pul yechish'),
+                                content: const Text('Platforma jamg\'armasidan dividend yoki xarajatlar uchun yechib olish operatsiyasi.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Bekor qilish')),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Yechish so\'rovi bank tizimiga yuborildi')),
+                                      );
+                                    },
+                                    child: const Text('Tasdiqlash'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.emerald.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('Mablag\' yechish', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.emerald)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '• <= 2,000,000 UZS: 30,000 UZS\n• 2,000,000 - 5,000,000 UZS: 50,000 UZS\n• > 5,000,000 UZS: 70,000 UZS',
+                      style: TextStyle(fontSize: 11, height: 1.4, color: AppColors.darkTextSecondary),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -252,7 +303,7 @@ class AdminDashboardView extends StatelessWidget {
                 title: 'Muloqotlar & Chat Xonalar',
                 subtitle: 'Yuk beruvchilar va haydovchilar o\'rtasidagi barcha yozishmalar',
                 icon: Icons.chat_bubble_outline_rounded,
-                color: Colors.purpleAccent,
+                color: AppColors.primary,
                 isDark: isDark,
                 onTap: () => context.push('/chat'),
               ),

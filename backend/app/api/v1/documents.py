@@ -39,3 +39,14 @@ async def verify_document(
     service = DocumentService(db)
     result = await service.verify_document(doc_id, req)
     return ApiResponse(data=result, message="Document status updated")
+
+@router.delete("/{doc_id}", response_model=ApiResponse[bool])
+async def delete_document(
+    doc_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = DocumentService(db)
+    await service.delete_document(doc_id, current_user.id)
+    return ApiResponse(data=True, message="Document deleted successfully")
+

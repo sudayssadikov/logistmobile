@@ -11,6 +11,18 @@ class LatLngPoint extends Equatable {
     this.label,
   });
 
+  factory LatLngPoint.fromJson(Map<String, dynamic> json) => LatLngPoint(
+        latitude: (json['latitude'] as num?)?.toDouble() ?? 41.2995,
+        longitude: (json['longitude'] as num?)?.toDouble() ?? 69.2401,
+        label: json['label'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'latitude': latitude,
+        'longitude': longitude,
+        if (label != null) 'label': label,
+      };
+
   @override
   List<Object?> get props => [latitude, longitude, label];
 }
@@ -39,6 +51,32 @@ class TelemetryUpdate extends Equatable {
     required this.nextWaypointName,
     required this.timestamp,
   });
+
+  factory TelemetryUpdate.fromJson(Map<String, dynamic> json) => TelemetryUpdate(
+        latitude: (json['latitude'] as num?)?.toDouble() ?? 41.2995,
+        longitude: (json['longitude'] as num?)?.toDouble() ?? 69.2401,
+        speedKmh: (json['speedKmh'] as num?)?.toDouble() ?? (json['speed_kmh'] as num?)?.toDouble() ?? 0.0,
+        headingDegrees: (json['headingDegrees'] as num?)?.toDouble() ?? (json['heading_degrees'] as num?)?.toDouble() ?? 0.0,
+        altitudeMeters: (json['altitudeMeters'] as num?)?.toDouble() ?? (json['altitude_meters'] as num?)?.toDouble() ?? 450.0,
+        batteryPercent: json['batteryPercent'] as int? ?? json['battery_percent'] as int? ?? 100,
+        distanceRemainingKm: (json['distanceRemainingKm'] as num?)?.toDouble() ?? (json['distance_remaining_km'] as num?)?.toDouble() ?? 0.0,
+        eta: json['eta'] as String? ?? 'Reys bo\'yicha',
+        nextWaypointName: json['nextWaypointName'] as String? ?? json['next_waypoint_name'] as String? ?? 'Manzil',
+        timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'latitude': latitude,
+        'longitude': longitude,
+        'speedKmh': speedKmh,
+        'headingDegrees': headingDegrees,
+        'altitudeMeters': altitudeMeters,
+        'batteryPercent': batteryPercent,
+        'distanceRemainingKm': distanceRemainingKm,
+        'eta': eta,
+        'nextWaypointName': nextWaypointName,
+        'timestamp': timestamp.toIso8601String(),
+      };
 
   @override
   List<Object?> get props => [
@@ -77,6 +115,40 @@ class TrackingDataModel extends Equatable {
     required this.routePolyline,
     required this.currentTelemetry,
   });
+
+  factory TrackingDataModel.fromJson(Map<String, dynamic> json) {
+    final polyRaw = json['routePolyline'] as List? ?? json['route_polyline'] as List? ?? [];
+    return TrackingDataModel(
+      shipmentId: json['shipmentId'] as String? ?? json['shipment_id'] as String? ?? '',
+      trackingCode: json['trackingCode'] as String? ?? json['tracking_code'] as String? ?? '',
+      vehiclePlate: json['vehiclePlate'] as String? ?? json['vehicle_plate'] as String? ?? '',
+      driverName: json['driverName'] as String? ?? json['driver_name'] as String? ?? 'Haydovchi',
+      driverPhone: json['driverPhone'] as String? ?? json['driver_phone'] as String? ?? '',
+      origin: json['origin'] != null
+          ? LatLngPoint.fromJson(json['origin'] as Map<String, dynamic>)
+          : const LatLngPoint(latitude: 41.2995, longitude: 69.2401, label: 'Toshkent'),
+      destination: json['destination'] != null
+          ? LatLngPoint.fromJson(json['destination'] as Map<String, dynamic>)
+          : const LatLngPoint(latitude: 39.6542, longitude: 66.9597, label: 'Samarqand'),
+      routePolyline: polyRaw.map((e) => LatLngPoint.fromJson(e as Map<String, dynamic>)).toList(),
+      currentTelemetry: json['currentTelemetry'] != null
+          ? TelemetryUpdate.fromJson(json['currentTelemetry'] as Map<String, dynamic>)
+          : (json['current_telemetry'] != null
+              ? TelemetryUpdate.fromJson(json['current_telemetry'] as Map<String, dynamic>)
+              : TelemetryUpdate(
+                  latitude: 41.2995,
+                  longitude: 69.2401,
+                  speedKmh: 0,
+                  headingDegrees: 0,
+                  altitudeMeters: 450,
+                  batteryPercent: 100,
+                  distanceRemainingKm: 0,
+                  eta: 'Joylashuv kutilmoqda',
+                  nextWaypointName: 'Marshrut',
+                  timestamp: DateTime.now(),
+                )),
+    );
+  }
 
   TrackingDataModel copyWith({
     String? shipmentId,

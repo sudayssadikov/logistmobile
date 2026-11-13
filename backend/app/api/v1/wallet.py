@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.auth import get_current_user
@@ -57,21 +57,33 @@ async def request_withdrawal(
 
 # Escrow Endpoints
 @router.post("/escrow/fund", response_model=ApiResponse[WalletModel])
+@router.post("/wallet/escrow/{shipment_id}/fund", response_model=ApiResponse[WalletModel])
 async def fund_escrow(
-    req: FundEscrowRequest,
+    req: Optional[FundEscrowRequest] = None,
+    shipment_id: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    target_shipment_id = (req.shipment_id if req else None) or shipment_id
+    idempotency_key = req.idempotency_key if req else None
     service = EscrowService(db)
-    result = await service.fund_escrow(current_user.id, req.shipment_id, req.idempotency_key)
+    result = await service.fund_escrow(current_user.id, target_shipment_id, idempotency_key)
     return ApiResponse(data=result, message="Funds locked in escrow successfully")
 
 @router.post("/escrow/release/{shipment_id}", response_model=ApiResponse[bool])
+@router.post("/wallet/escrow/{shipment_id}/release", response_model=ApiResponse[bool])
+@router.post("/wallet/escrow/release", response_model=ApiResponse[bool])
 async def release_escrow(
-    shipment_id: str,
+    shipment_id: Optional[str] = None,
+    req: Optional[Dict[str, Any]] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    target_id = shipment_id or (req.get("shipment_id") or req.get("shipmentId") if req else None)
+    if not target_id:
+        from app.core.exceptions import ValidationError
+        raise ValidationError("shipment_id ko'rsatilishi shart.")
     service = EscrowService(db)
-    result = await service.release_escrow(shipment_id, current_user.id)
+    result = await service.release_escrow(target_id, current_user.id)
     return ApiResponse(data=result, message="Escrow funds released to carrier wallet")
+

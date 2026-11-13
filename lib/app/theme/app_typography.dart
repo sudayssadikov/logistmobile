@@ -1,92 +1,114 @@
 import 'package:flutter/material.dart';
 
-/// Typography scale for LogiFlow (Linear / Inter / Plus Jakarta Sans style)
+/// Typography scale for LogiFlow - Apple Keynote & Liquid Glass Aesthetic
+/// Featuring Archivo (wdth 125, weight 800) punchy wordmark / display hierarchy
+/// and Geist / SF Pro tight-tracking precision UI typography.
 abstract class AppTypography {
   static const List<String> fontFallbacks = [
+    'Geist',
+    'SF Pro Display',
+    'SF Pro Text',
+    'Inter',
     'Segoe UI',
     'Roboto',
-    'Helvetica Neue',
-    'Arial',
     'sans-serif',
   ];
 
+  static const List<String> displayFallbacks = [
+    'Archivo',
+    'Geist',
+    'SF Pro Display',
+    'Inter',
+    'sans-serif',
+  ];
+
+  /// Wordmark & Hero Keynote Headline (Archivo Heavy weight 800 aesthetic)
+  static const TextStyle wordmark = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.2,
+    height: 1.1,
+    fontFamilyFallback: displayFallbacks,
+  );
+
   static const TextStyle displayLarge = TextStyle(
     fontSize: 28,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.75,
-    height: 1.2,
-    fontFamilyFallback: fontFallbacks,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.9,
+    height: 1.18,
+    fontFamilyFallback: displayFallbacks,
   );
 
   static const TextStyle displayMedium = TextStyle(
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
+    height: 1.22,
+    fontFamilyFallback: displayFallbacks,
+  );
+
+  static const TextStyle titleLarge = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.4,
     height: 1.25,
     fontFamilyFallback: fontFallbacks,
   );
 
-  static const TextStyle titleLarge = TextStyle(
-    fontSize: 20,
+  static const TextStyle titleMedium = TextStyle(
+    fontSize: 15,
     fontWeight: FontWeight.w600,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
     height: 1.3,
     fontFamilyFallback: fontFallbacks,
   );
 
-  static const TextStyle titleMedium = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    letterSpacing: -0.2,
-    height: 1.35,
-    fontFamilyFallback: fontFallbacks,
-  );
-
   static const TextStyle bodyLarge = TextStyle(
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: FontWeight.w400,
-    letterSpacing: -0.1,
-    height: 1.45,
+    letterSpacing: -0.15,
+    height: 1.4,
     fontFamilyFallback: fontFallbacks,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: FontWeight.w400,
-    letterSpacing: 0,
-    height: 1.45,
+    letterSpacing: -0.05,
+    height: 1.4,
     fontFamilyFallback: fontFallbacks,
   );
 
   static const TextStyle bodySmall = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    letterSpacing: 0.1,
-    height: 1.4,
+    letterSpacing: 0,
+    height: 1.35,
     fontFamilyFallback: fontFallbacks,
   );
 
   static const TextStyle labelLarge = TextStyle(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.2,
-    height: 1.3,
+    letterSpacing: -0.1,
+    height: 1.25,
     fontFamilyFallback: fontFallbacks,
   );
 
   static const TextStyle labelSmall = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.3,
+    letterSpacing: 0.1,
     height: 1.2,
     fontFamilyFallback: fontFallbacks,
   );
 
   static const TextStyle monoMetric = TextStyle(
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
     fontFamily: 'monospace',
-    fontFamilyFallback: ['Consolas', 'Courier New', 'monospace'],
+    fontFamilyFallback: ['Geist Mono', 'SF Mono', 'Consolas', 'Courier New', 'monospace'],
   );
 }
+

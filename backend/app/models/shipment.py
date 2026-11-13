@@ -46,7 +46,9 @@ class Shipment(Base, TimestampMixin):
     cargo_type: Mapped[str] = mapped_column(String(128), nullable=False)
     weight_tons: Mapped[float] = mapped_column(Float, nullable=False)
     volume_m3: Mapped[float] = mapped_column(Float, nullable=False)
-    price: Mapped[float] = mapped_column(Float, nullable=False) # In UZS or major currency unit
+    price: Mapped[float] = mapped_column(Float, nullable=False) # In UZS (Shipper pays exact price)
+    commission_amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False) # Platform fee locked at escrow fund
+    carrier_payout: Mapped[float] = mapped_column(Float, default=0.0, nullable=False) # Net payout to carrier = price - commission_amount
     
     # Escrow & Logistics Progress
     is_escrow_funded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

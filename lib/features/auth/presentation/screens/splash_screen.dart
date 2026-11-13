@@ -37,9 +37,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _animController.forward();
 
     // Check auth status
-    Future.delayed(const Duration(milliseconds: 1400), () {
+    Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         context.read<AuthBloc>().add(AuthCheckRequested());
+      }
+    });
+
+    // Safety fallback transition
+    Future.delayed(const Duration(milliseconds: 2200), () {
+      if (mounted) {
+        final authState = context.read<AuthBloc>().state;
+        if (authState.status == AuthStatus.authenticated) {
+          context.go('/dashboard');
+        } else {
+          context.go('/onboarding');
+        }
       }
     });
   }
@@ -52,6 +64,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final subtextColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
@@ -61,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.darkBackground,
+        backgroundColor: bgColor,
         body: Center(
           child: AnimatedBuilder(
             animation: _animController,
@@ -73,47 +91,45 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // High-end Glowing Logo Container
+                      // Neumorphic Logo Container
                       Container(
-                        width: 88,
-                        height: 88,
+                        width: 96,
+                        height: 96,
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
+                          color: surfaceColor,
                           borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.4),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+                          boxShadow: NeuShadows.elevation(isDark: isDark, blur: 16, offset: 8),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF2A2D31) : Colors.white.withValues(alpha: 0.8),
+                            width: 1.5,
+                          ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.local_shipping_rounded,
-                            size: 46,
-                            color: Colors.white,
+                            size: 48,
+                            color: textColor,
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         'LogiFlow',
                         style: TextStyle(
-                          fontSize: 30,
+                          fontSize: 32,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.8,
-                          color: Colors.white,
+                          color: textColor,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         'Enterprise Freight & Escrow Logistics',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.2,
-                          color: AppColors.darkTextSecondary.withValues(alpha: 0.9),
+                          color: subtextColor,
                         ),
                       ),
                     ],

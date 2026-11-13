@@ -1,0 +1,27 @@
+# Stage 1: Build Flutter Web application
+FROM ghcr.io/cirruslabs/flutter:stable AS build
+
+WORKDIR /app
+
+# Copy dependency manifests
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
+
+# Copy entire source code
+COPY . .
+
+# Build production web bundle with HTML renderer or auto, passing production defines
+RUN flutter build web --release --dart-define=API_URL=/api/v1 --dart-define=WS_URL=/api/v1/ws
+
+# Stage 2: Serve using high-performance Caddy server
+FROM caddy:2-alpine
+
+# Copy built web artifacts
+COPY --from=build /app/build/web /usr/share/caddy
+
+# Simple Caddyfile for static SPA serving
+RUN printf ':80 {\n    root * /usr/share/caddy\n    file_server\n    try_files {path} /index.html\n}\n' > /etc/caddy/Caddyfile
+
+EXPOSE 80
+
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]

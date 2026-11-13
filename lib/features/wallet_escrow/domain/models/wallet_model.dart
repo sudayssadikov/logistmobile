@@ -5,7 +5,8 @@ enum TransactionType {
   escrowHold('Escrow Hold', '🔒'),
   escrowRelease('Escrow Release', '✓'),
   payout('Payout Withdrawal', '-'),
-  commission('Platform Fee', '-');
+  commission('Xizmat haqi', '-'),
+  refund('Qaytarildi', '+');
 
   final String label;
   final String symbol;
@@ -74,4 +75,6 @@ class WalletModel extends Equatable {
         totalLifetimeEarnings,
         transactions,
       ];
+
+  String get escrowHoldFormatted => '${inEscrowHoldBalance.toStringAsFixed(0)} UZS';
 }

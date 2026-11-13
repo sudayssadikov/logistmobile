@@ -88,3 +88,12 @@ class FundEscrowSubmitted extends ShipmentEvent {
   @override
   List<Object?> get props => [shipmentId];
 }
+
+class UpdateShipmentStatusRequested extends AdvanceShipmentStatusSubmitted {
+  const UpdateShipmentStatusRequested({
+    required super.shipmentId,
+    required super.nextStatus,
+    super.currentRole = UserRole.driver,
+  });
+}
+

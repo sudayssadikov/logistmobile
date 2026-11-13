@@ -6,25 +6,28 @@ import '../../domain/repositories/chat_repository.dart';
 
 class ChatRepositoryImpl implements IChatRepository {
   final DioClient? _dioClient;
-  final List<ChatChannelModel> _channels = [];
-  final Map<String, List<ChatMessageModel>> _messages = {};
+  final Map<String, List<ChatMessageModel>> _localMessages = {};
 
   ChatRepositoryImpl([this._dioClient]);
 
   @override
   Future<ApiResult<List<ChatChannelModel>>> getChannels() async {
-    if (_dioClient != null) {
-      try {
-        final response = await _dioClient!.get('/chat/channels');
-        if (response.statusCode == 200 && response.data != null) {
-          // Channel updates
-        }
-      } catch (_) {
-        // Fallback
-      }
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
     }
-    await Future.delayed(const Duration(milliseconds: 150));
-    return ApiSuccess(_channels);
+    try {
+      final response = await _dioClient!.get('/chat/channels');
+      if (response.statusCode == 200 && response.data != null) {
+        final rawData = response.data['data'] as List<dynamic>? ?? [];
+        final channels = rawData
+            .map((item) => ChatChannelModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+        return ApiSuccess(channels);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Chat kanallarini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Chat kanallarini yuklab bo\'lmadi: ${e.toString()}');
+    }
   }
 
   @override
@@ -33,20 +36,23 @@ class ChatRepositoryImpl implements IChatRepository {
         ? channelOrShipmentId.replaceFirst('CH-', '')
         : channelOrShipmentId;
 
-    if (_dioClient != null) {
-      try {
-        final response = await _dioClient!.get('/chat/messages/$key');
-        if (response.statusCode == 200 && response.data != null) {
-          // Parse remote messages
-        }
-      } catch (_) {
-        // Fallback
-      }
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
     }
-
-    await Future.delayed(const Duration(milliseconds: 150));
-    final list = _messages[key] ?? [];
-    return ApiSuccess(list);
+    try {
+      final response = await _dioClient!.get('/chat/$key');
+      if (response.statusCode == 200 && response.data != null) {
+        final rawData = response.data['data'] as List<dynamic>? ?? [];
+        final messages = rawData
+            .map((item) => ChatMessageModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+        _localMessages[key] = messages;
+        return ApiSuccess(messages);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Xabarlarni yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Xabarlarni yuklab bo\'lmadi: ${e.toString()}');
+    }
   }
 
   @override
@@ -65,24 +71,49 @@ class ChatRepositoryImpl implements IChatRepository {
 
     if (_dioClient != null) {
       try {
-        await _dioClient!.post(
-          '/chat/messages',
-          data: {
-            'channel_id': key,
-            'content': content,
-            'type': type.name,
-          },
+        final payload = {
+          'type': type.name,
+          'content': content,
+          if (voicePayload != null)
+            'voicePayload': {
+              'durationSeconds': voicePayload.durationSeconds,
+              'waveformSamples': voicePayload.waveformSamples,
+              'isPlayed': voicePayload.isPlayed,
+              'playbackSpeed': voicePayload.playbackSpeed,
+            },
+          if (mediaAttachment != null)
+            'mediaAttachment': {
+              'url': mediaAttachment.url,
+              'fileName': mediaAttachment.fileName,
+              'fileSizeBytes': mediaAttachment.fileSizeBytes,
+            },
+          if (locationPayload != null)
+            'locationPayload': {
+              'latitude': locationPayload.latitude,
+              'longitude': locationPayload.longitude,
+              'title': locationPayload.title,
+              'address': locationPayload.address,
+            },
+        };
+
+        final response = await _dioClient!.post(
+          '/chat/$key',
+          data: payload,
         );
-      } catch (_) {
-        // Fallback
-      }
+
+        if (response.statusCode == 200 && response.data != null) {
+          final msgData = response.data['data'] as Map<String, dynamic>;
+          final msg = ChatMessageModel.fromJson(msgData);
+          _localMessages.putIfAbsent(key, () => []).add(msg);
+          return ApiSuccess(msg);
+        }
+      } catch (_) {}
     }
 
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    final msg = ChatMessageModel(
+    // Unsent offline queue message (status: sending / pending)
+    final localMsg = ChatMessageModel(
       id: 'MSG-${DateTime.now().millisecondsSinceEpoch}',
-      channelId: 'CH-$key',
+      channelId: key,
       senderId: 'USR-ME',
       senderName: 'You',
       senderRole: UserRole.shipper,
@@ -90,15 +121,15 @@ class ChatRepositoryImpl implements IChatRepository {
       content: content,
       timestamp: DateTime.now(),
       isMine: true,
-      status: MessageStatus.delivered,
+      status: MessageStatus.sending, // Yuborilmagan / navbatda
       voicePayload: voicePayload,
       mediaAttachment: mediaAttachment,
       locationPayload: locationPayload,
       replyTo: replyTo,
     );
 
-    _messages.putIfAbsent(key, () => []).add(msg);
-    return ApiSuccess(msg);
+    _localMessages.putIfAbsent(key, () => []).add(localMsg);
+    return ApiSuccess(localMsg);
   }
 
   @override
@@ -110,7 +141,7 @@ class ChatRepositoryImpl implements IChatRepository {
     final key = channelOrShipmentId.startsWith('CH-')
         ? channelOrShipmentId.replaceFirst('CH-', '')
         : channelOrShipmentId;
-    final list = _messages[key] ?? [];
+    final list = _localMessages[key] ?? [];
     final index = list.indexWhere((m) => m.id == messageId);
     if (index != -1) {
       final current = list[index];
@@ -140,7 +171,7 @@ class ChatRepositoryImpl implements IChatRepository {
     final key = channelOrShipmentId.startsWith('CH-')
         ? channelOrShipmentId.replaceFirst('CH-', '')
         : channelOrShipmentId;
-    final list = _messages[key] ?? [];
+    final list = _localMessages[key] ?? [];
     final index = list.indexWhere((m) => m.id == messageId);
     if (index != -1) {
       final current = list[index];
@@ -159,7 +190,7 @@ class ChatRepositoryImpl implements IChatRepository {
     final key = channelOrShipmentId.startsWith('CH-')
         ? channelOrShipmentId.replaceFirst('CH-', '')
         : channelOrShipmentId;
-    final list = _messages[key] ?? [];
+    final list = _localMessages[key] ?? [];
     final index = list.indexWhere((m) => m.id == messageId);
     if (index != -1) {
       final current = list[index];

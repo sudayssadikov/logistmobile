@@ -25,7 +25,7 @@ class CallRepositoryImpl implements ICallRepository {
   }) async {
     if (_dioClient != null) {
       try {
-        await _dioClient!.post(
+        final resp = await _dioClient!.post(
           '/calls/initiate',
           data: {
             'receiver_id': receiverId,
@@ -34,43 +34,32 @@ class CallRepositoryImpl implements ICallRepository {
             'shipment_id': shipmentId,
           },
         );
-      } catch (_) {
-        // Fallback
+        if (resp.statusCode == 200 && resp.data != null) {
+          final data = resp.data['data'] as Map<String, dynamic>;
+          final session = CallSessionModel(
+            id: data['id'] ?? 'CALL-${DateTime.now().millisecondsSinceEpoch}',
+            shipmentId: data['shipment_id'] ?? shipmentId,
+            callerId: data['caller_id'] ?? 'USR-ME',
+            callerName: data['caller_name'] ?? 'You',
+            callerRole: UserRole.shipper,
+            receiverId: receiverId,
+            receiverName: receiverName,
+            receiverRole: UserRole.driver,
+            type: type,
+            status: CallStatus.outgoing,
+            direction: CallDirection.outgoing,
+            startedAt: DateTime.now(),
+          );
+          _activeSession = session;
+          _sessionController.add(_activeSession);
+          return ApiSuccess(session);
+        }
+      } catch (e) {
+        return ApiFailure(message: 'Qo\'ng\'iroqni boshlab bo\'lmadi: ${e.toString()}');
       }
     }
 
-    await Future.delayed(const Duration(milliseconds: 150));
-
-    final session = CallSessionModel(
-      id: 'CALL-${DateTime.now().millisecondsSinceEpoch}',
-      shipmentId: shipmentId,
-      callerId: 'USR-ME',
-      callerName: 'You',
-      callerRole: UserRole.shipper,
-      receiverId: receiverId,
-      receiverName: receiverName,
-      receiverRole: UserRole.driver,
-      type: type,
-      status: CallStatus.outgoing,
-      direction: CallDirection.outgoing,
-      startedAt: DateTime.now(),
-    );
-
-    _activeSession = session;
-    _sessionController.add(_activeSession);
-
-    // Simulate connection after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      if (_activeSession != null && _activeSession!.status == CallStatus.outgoing) {
-        _activeSession = _activeSession!.copyWith(
-          status: CallStatus.active,
-          connectedAt: DateTime.now(),
-        );
-        _sessionController.add(_activeSession);
-      }
-    });
-
-    return ApiSuccess(session);
+    return const ApiFailure(message: 'Serverga ulanish imkoni bo\'lmadi. Qayta urinib ko\'ring.');
   }
 
   @override
@@ -187,20 +176,18 @@ class CallRepositoryImpl implements ICallRepository {
 
   @override
   Future<ApiResult<List<CallLogModel>>> getCallLogs() async {
-    if (_dioClient != null) {
-      try {
-        final response = await _dioClient!.get('/calls/history');
-        if (response.statusCode == 200 && response.data != null) {
-          final List raw = response.data['data'] ?? [];
-          if (raw.isNotEmpty) {
-            return ApiSuccess(raw.map((e) => CallLogModel.fromJson(e)).toList());
-          }
-        }
-      } catch (_) {
-        // Fallback
-      }
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
     }
-    await Future.delayed(const Duration(milliseconds: 150));
-    return ApiSuccess(_callLogs);
+    try {
+      final response = await _dioClient!.get('/calls/history');
+      if (response.statusCode == 200 && response.data != null) {
+        final List raw = response.data['data'] ?? [];
+        return ApiSuccess(raw.map((e) => CallLogModel.fromJson(e as Map<String, dynamic>)).toList());
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Qo\'ng\'iroqlar tarixini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
+    }
   }
 }

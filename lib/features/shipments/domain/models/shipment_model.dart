@@ -237,6 +237,8 @@ class ShipmentModel extends Equatable {
   final double weightTons;
   final double volumeM3;
   final double price;
+  final double commissionAmount;
+  final double carrierPayout;
   final bool isEscrowFunded;
   final double distanceKm;
   final String eta;
@@ -246,6 +248,28 @@ class ShipmentModel extends Equatable {
   final DateTime createdAt;
 
   String get formattedPrice => "${NumberFormat('#,###', 'en_US').format(price)} UZS";
+  String get formattedCommission => "${NumberFormat('#,###', 'en_US').format(effectiveCommission)} UZS";
+  String get formattedCarrierPayout => "${NumberFormat('#,###', 'en_US').format(effectiveCarrierPayout)} UZS";
+
+  double get effectiveCommission {
+    if (commissionAmount > 0) return commissionAmount;
+    return calculatePlatformCommission(price);
+  }
+
+  double get effectiveCarrierPayout {
+    if (carrierPayout > 0) return carrierPayout;
+    return (price - effectiveCommission).clamp(0.0, double.infinity);
+  }
+
+  static double calculatePlatformCommission(double amount) {
+    if (amount <= 2000000.0) {
+      return 30000.0;
+    } else if (amount <= 5000000.0) {
+      return 50000.0;
+    } else {
+      return 70000.0;
+    }
+  }
 
   const ShipmentModel({
     required this.id,
@@ -265,6 +289,8 @@ class ShipmentModel extends Equatable {
     required this.weightTons,
     required this.volumeM3,
     required this.price,
+    this.commissionAmount = 0.0,
+    this.carrierPayout = 0.0,
     this.isEscrowFunded = false,
     required this.distanceKm,
     required this.eta,
@@ -346,6 +372,8 @@ class ShipmentModel extends Equatable {
         'weight_tons': weightTons,
         'volume_m3': volumeM3,
         'price': price,
+        'commission_amount': commissionAmount,
+        'carrier_payout': carrierPayout,
         'is_escrow_funded': isEscrowFunded,
         'distance_km': distanceKm,
         'eta': eta,
@@ -380,6 +408,8 @@ class ShipmentModel extends Equatable {
         weightTons: (json['weight_tons'] as num?)?.toDouble() ?? (json['weightTons'] as num?)?.toDouble() ?? 10.0,
         volumeM3: (json['volume_m3'] as num?)?.toDouble() ?? (json['volumeM3'] as num?)?.toDouble() ?? 40.0,
         price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        commissionAmount: (json['commission_amount'] as num?)?.toDouble() ?? (json['commissionAmount'] as num?)?.toDouble() ?? 0.0,
+        carrierPayout: (json['carrier_payout'] as num?)?.toDouble() ?? (json['carrierPayout'] as num?)?.toDouble() ?? 0.0,
         isEscrowFunded: json['is_escrow_funded'] as bool? ?? json['isEscrowFunded'] as bool? ?? false,
         distanceKm: (json['distance_km'] as num?)?.toDouble() ?? (json['distanceKm'] as num?)?.toDouble() ?? 300.0,
         eta: json['eta'] as String? ?? '6 hours',

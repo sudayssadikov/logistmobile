@@ -30,7 +30,9 @@ class EscrowLock(Base, TimestampMixin):
     wallet_id: Mapped[str] = mapped_column(String(64), ForeignKey("wallets.id", ondelete="CASCADE"), nullable=False, index=True)
     shipment_id: Mapped[str] = mapped_column(String(64), ForeignKey("shipments.id"), unique=True, nullable=False, index=True)
     tracking_code: Mapped[str] = mapped_column(String(64), nullable=False)
-    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    amount: Mapped[float] = mapped_column(Float, nullable=False) # Total funded by shipper
+    commission_amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False) # Platform commission reserved
+    carrier_payout: Mapped[float] = mapped_column(Float, default=0.0, nullable=False) # Net amount to release to carrier
     status: Mapped[str] = mapped_column(String(32), default=EscrowStatus.HELD.value, nullable=False) # held, released, refunded
     held_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     released_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

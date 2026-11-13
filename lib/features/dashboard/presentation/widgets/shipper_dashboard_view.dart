@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/localization/app_localizations.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/metric_card.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/neu_design_system.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../shipments/domain/models/load_status.dart';
 import '../../../shipments/presentation/bloc/shipment_bloc.dart';
+import '../../../shipments/presentation/bloc/shipment_event.dart';
 import '../../../shipments/presentation/bloc/shipment_state.dart';
 import '../../../shipments/presentation/widgets/shipment_card.dart';
+import '../../../wallet_escrow/presentation/bloc/wallet_bloc.dart';
+import '../../../wallet_escrow/presentation/bloc/wallet_event.dart';
 
 class ShipperDashboardView extends StatelessWidget {
   const ShipperDashboardView({super.key});
@@ -18,146 +20,232 @@ class ShipperDashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = context.watch<AuthBloc>().state.user;
+    final walletState = context.watch<WalletBloc>().state;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.inventory_2_rounded, size: 18, color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user?.companyName ?? 'Shipper Workspace',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  '${'roles.shipper'.tr()} • ${user?.fullName ?? "User"}',
-                  style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
-                ),
-              ],
-            ),
-          ],
-        ),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      appBar: NeuAppBar(
+        title: user?.companyName ?? 'Shipper Workspace',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+          NeuIconButton(
+            icon: Icons.notifications_outlined,
             onPressed: () => context.push('/notifications'),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: BlocBuilder<ShipmentBloc, ShipmentState>(
         builder: (context, state) {
-          final activeShipments = state.shipments.where((e) => e.status != LoadStatus.completedPayoutReleased).toList();
+          if (state.isLoading) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                children: const [
+                  NeuSkeleton(width: double.infinity, height: 140, borderRadius: 16),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: NeuSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+                      SizedBox(width: 12),
+                      Expanded(child: NeuSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  NeuSkeleton(width: double.infinity, height: 110, borderRadius: 16),
+                  SizedBox(height: 12),
+                  NeuSkeleton(width: double.infinity, height: 110, borderRadius: 16),
+                ],
+              ),
+            );
+          }
+
+          if (state.errorMessage != null && state.shipments.isEmpty) {
+            return NeuErrorState(
+              message: state.errorMessage!,
+              onRetry: () {
+                context.read<ShipmentBloc>().add(const LoadShipmentsRequested());
+                context.read<WalletBloc>().add(LoadWalletRequested());
+              },
+            );
+          }
+
+          final activeShipments = state.shipments
+              .where((e) => e.status != LoadStatus.completedPayoutReleased)
+              .toList();
+
+          final escrowHoldText = walletState.wallet?.escrowHoldFormatted ?? '0 UZS';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Quick CTA Banner: Post Load & Escrow Guarantee
-                Container(
+                // Neumorphic CTA Banner (Clean light/dark surface, no gradient)
+                NeuCard(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
+                  borderRadius: 20,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'dashboard.bannerTitle'.tr(),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          letterSpacing: -0.2,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'dashboard.bannerDesc'.tr(),
-                        style: const TextStyle(fontSize: 12, color: Colors.white70, height: 1.4),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          height: 1.4,
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      AppButton(
+                      NeuButton(
                         text: 'dashboard.postLoadBtn'.tr(),
-                        height: 38,
-                        variant: AppButtonVariant.secondary,
-                        prefixIcon: Icons.add_circle_outline_rounded,
+                        icon: Icons.add_circle_outline_rounded,
+                        variant: NeuButtonVariant.primary,
+                        height: 44,
                         onPressed: () => context.push('/create-load'),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // Shipper Key KPI Metrics
+                // Key KPI Metrics (Strict Neumorphism, real backend values, no fake labels)
                 Row(
                   children: [
                     Expanded(
-                      child: MetricCard(
-                        title: 'dashboard.activeInTransit'.tr(),
-                        value: '${activeShipments.length}',
-                        trendText: 'dashboard.loadsCount'.tr(),
-                        icon: Icons.local_shipping_rounded,
-                        iconColor: AppColors.primary,
+                      child: NeuCard(
                         onTap: () => context.go('/shipments'),
+                        padding: const EdgeInsets.all(16),
+                        borderRadius: 16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            NeuIconButton(
+                              icon: Icons.local_shipping_outlined,
+                              size: 38,
+                              iconSize: 20,
+                              onPressed: () => context.go('/shipments'),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '${activeShipments.length}',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'dashboard.activeInTransit'.tr(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: MetricCard(
-                        title: 'dashboard.escrowProtected'.tr(),
-                        value: '28.0M',
-                        trendText: 'dashboard.safe100'.tr(),
-                        icon: Icons.shield_rounded,
-                        iconColor: AppColors.emerald,
+                      child: NeuCard(
                         onTap: () => context.go('/wallet'),
+                        padding: const EdgeInsets.all(16),
+                        borderRadius: 16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            NeuIconButton(
+                              icon: Icons.shield_outlined,
+                              size: 38,
+                              iconSize: 20,
+                              onPressed: () => context.go('/wallet'),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              escrowHoldText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'dashboard.escrowProtected'.tr(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
-                // Active Priority Shipments Section
+                // Active Shipments Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'dashboard.activeShipments'.tr(),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
-                        color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => context.go('/shipments'),
-                      child: Text('dashboard.viewAll'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    ),
+                    if (activeShipments.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => context.go('/shipments'),
+                        child: Text(
+                          'dashboard.viewAll'.tr(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
-                ...activeShipments.take(3).map((shipment) {
-                  return ShipmentCard(
-                    shipment: shipment,
-                    onTap: () => context.push('/shipments/${shipment.id}'),
-                  );
-                }),
+                // Active Shipments List or NeuEmptyState
+                if (activeShipments.isEmpty)
+                  NeuEmptyState(
+                    icon: Icons.inventory_2_outlined,
+                    title: 'shipments.emptyActiveTitle'.tr(),
+                    subtitle: 'shipments.emptyActiveDesc'.tr(),
+                    actionText: 'dashboard.postLoadBtn'.tr(),
+                    onAction: () => context.push('/create-load'),
+                  )
+                else
+                  ...activeShipments.take(4).map((shipment) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ShipmentCard(
+                        shipment: shipment,
+                        onTap: () => context.push('/shipments/${shipment.id}'),
+                      ),
+                    );
+                  }),
               ],
             ),
           );

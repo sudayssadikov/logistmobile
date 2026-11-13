@@ -60,7 +60,7 @@ class _ActiveCallScreenState extends State<ActiveCallScreen> with SingleTickerPr
         final isVideo = session.type == CallType.video && session.isVideoEnabled;
 
         return Scaffold(
-          backgroundColor: const Color(0xFF0F172A), // Deep Slate 900
+          backgroundColor: AppColors.darkBackground,
           body: Stack(
             children: [
               // Background / Video Stream Simulation

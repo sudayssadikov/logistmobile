@@ -8,6 +8,8 @@ abstract class WalletEvent extends Equatable {
 
 class FetchWalletSummaryRequested extends WalletEvent {}
 
+typedef LoadWalletRequested = FetchWalletSummaryRequested;
+
 class DepositFundsSubmitted extends WalletEvent {
   final double amount;
   const DepositFundsSubmitted(this.amount);

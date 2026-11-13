@@ -38,29 +38,17 @@ void main() {
       expect(fromJson.walletBalance, 12000000.0);
     });
 
-    test('Admin user login credentials test', () async {
+    test('AuthRepository returns ApiFailure when disconnected without mock backdoor', () async {
       final storage = LocalStorageService();
       final authRepo = AuthRepositoryImpl(storage);
 
-      // Invalid password
-      final failResult = await authRepo.loginWithPassword(
-        emailOrPhone: 'sudaysadmin',
-        password: 'wrongpassword',
-        role: UserRole.shipper,
-      );
-      expect(failResult is ApiFailure, isTrue);
-
-      // Valid password
-      final successResult = await authRepo.loginWithPassword(
+      final result = await authRepo.loginWithPassword(
         emailOrPhone: 'sudaysadmin',
         password: 'sudaysbrat1109',
         role: UserRole.shipper,
       );
-      expect(successResult is ApiSuccess<UserModel>, isTrue);
-      final admin = (successResult as ApiSuccess<UserModel>).data;
-      expect(admin.email, 'sudaysadmin');
-      expect(admin.fullName, 'Sudays Admin');
-      expect(admin.role, UserRole.admin);
+      expect(result.isFailure, isTrue);
+      expect(result.errorOrNull, isNotNull);
     });
   });
 }

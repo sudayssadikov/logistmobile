@@ -50,14 +50,14 @@ class DriverPreferences extends Equatable {
 class MatchedShipment extends Equatable {
   final ShipmentModel shipment;
   final int matchPercentage; // e.g. 98%
-  final double distanceFromDriverKm;
+  final double? distanceFromDriverKm;
   final String aiReason;
   final bool isReturnTrip;
 
   const MatchedShipment({
     required this.shipment,
     required this.matchPercentage,
-    required this.distanceFromDriverKm,
+    this.distanceFromDriverKm,
     required this.aiReason,
     this.isReturnTrip = false,
   });

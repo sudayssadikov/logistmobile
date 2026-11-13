@@ -25,7 +25,7 @@ abstract class ILocalStorageService {
 
 /// In-memory & preference-backed storage implementation for cross-platform reliability
 class LocalStorageService implements ILocalStorageService {
-  // In-memory cache for ultra-fast sync access & mock session
+  // In-memory cache for ultra-fast sync access and session storage
   final Map<String, dynamic> _memoryStore = {};
 
   LocalStorageService() {
@@ -33,8 +33,8 @@ class LocalStorageService implements ILocalStorageService {
   }
 
   void _initDefaults() {
-    _memoryStore[AppConstants.themeModeKey] = 'dark';
-    _memoryStore[AppConstants.languageKey] = 'en';
+    _memoryStore[AppConstants.themeModeKey] = 'light';
+    _memoryStore[AppConstants.languageKey] = 'uz';
   }
 
   @override

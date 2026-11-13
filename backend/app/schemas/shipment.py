@@ -30,6 +30,8 @@ class ShipmentModel(BaseSchema):
     weight_tons: float = Field(..., alias="weight_tons")
     volume_m3: float = Field(..., alias="volume_m3")
     price: float
+    commission_amount: float = Field(0.0, alias="commission_amount")
+    carrier_payout: float = Field(0.0, alias="carrier_payout")
     is_escrow_funded: bool = Field(False, alias="is_escrow_funded")
     distance_km: float = Field(300.0, alias="distance_km")
     eta: str = "In Transit"

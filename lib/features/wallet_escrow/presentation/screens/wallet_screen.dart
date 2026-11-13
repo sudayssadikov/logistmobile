@@ -200,20 +200,10 @@ class _WalletScreenState extends State<WalletScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Primary Total Balance Banner
-                Container(
+                // Primary Total Balance Banner (Neumorphic)
+                NeuCard(
                   padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
+                  borderRadius: 20,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -222,55 +212,47 @@ class _WalletScreenState extends State<WalletScreen> {
                         children: [
                           Text(
                             'wallet.availableBalance'.tr(),
-                            style: const TextStyle(
-                              fontSize: 11,
+                            style: TextStyle(
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.8,
-                              color: Colors.white70,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'wallet.instantAccess'.tr(),
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
-                            ),
+                          NeuChip(
+                            label: 'wallet.instantAccess'.tr(),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '${currencyFormatter.format(wallet.availableBalance)} UZS',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.8,
-                          color: Colors.white,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 20),
                       Row(
                         children: [
                           Expanded(
-                            child: AppButton(
+                            child: NeuButton(
                               text: 'wallet.deposit'.tr(),
-                              height: 38,
-                              variant: AppButtonVariant.secondary,
-                              prefixIcon: Icons.add_rounded,
+                              height: 42,
+                              variant: NeuButtonVariant.primary,
+                              icon: Icons.add_rounded,
                               onPressed: () => _showDepositModal(context),
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: AppButton(
+                            child: NeuButton(
                               text: 'wallet.withdraw'.tr(),
-                              height: 38,
-                              variant: AppButtonVariant.secondary,
-                              prefixIcon: Icons.arrow_outward_rounded,
+                              height: 42,
+                              variant: NeuButtonVariant.secondary,
+                              icon: Icons.arrow_outward_rounded,
                               onPressed: () => _showWithdrawModal(context),
                             ),
                           ),

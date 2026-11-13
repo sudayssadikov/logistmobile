@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -18,28 +19,63 @@ class AILoadMatcherScreen extends StatefulWidget {
 
 class _AILoadMatcherScreenState extends State<AILoadMatcherScreen> {
   DriverPreferences _prefs = const DriverPreferences();
+  Position? _currentPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _initGps();
+  }
+
+  Future<void> _initGps() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return;
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.whileInUse || perm == LocationPermission.always) {
+        final pos = await Geolocator.getLastKnownPosition() ?? await Geolocator.getCurrentPosition();
+        if (mounted) {
+          setState(() => _currentPosition = pos);
+        }
+      }
+    } catch (_) {}
+  }
 
   List<MatchedShipment> _calculateMatches(List<ShipmentModel> shipments) {
     return shipments.map((shp) {
       int score = 85;
-      String reason = 'High match for your route & vehicle';
+      String reason = 'Sizning avtomobilingiz uchun mos yuk';
 
       if (shp.weightTons <= _prefs.maxWeightTons) {
         score += 8;
       }
       if (shp.cargoType.toLowerCase().contains('ref') && _prefs.hasRefrigeration) {
         score += 6;
-        reason = 'Optimal for Refrigerated (+4°C) truck';
+        reason = 'Muzlatgichli (+4°C) fura uchun optimal';
       }
       if (shp.price >= 15000000) {
         score += 5;
+      }
+
+      double? dist;
+      if (_currentPosition != null && shp.origin.latitude != 0) {
+        final meters = Geolocator.distanceBetween(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          shp.origin.latitude,
+          shp.origin.longitude,
+        );
+        dist = double.parse((meters / 1000.0).toStringAsFixed(1));
       }
 
       final matchScore = score.clamp(70, 99);
       return MatchedShipment(
         shipment: shp,
         matchPercentage: matchScore,
-        distanceFromDriverKm: 4.8,
+        distanceFromDriverKm: dist,
         aiReason: reason,
       );
     }).toList()
@@ -63,52 +99,46 @@ class _AILoadMatcherScreenState extends State<AILoadMatcherScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // AI Radar Header Banner
-                Container(
+                // AI Radar Header Banner (Neumorphic)
+                NeuCard(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E3A8A), Color(0xFF0284C7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                  borderRadius: 18,
                   child: Row(
                     children: [
                       Container(
-                        width: 48,
-                        height: 48,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: isDark ? AppColors.darkSurfacePressed : AppColors.lightSurfacePressed,
                           shape: BoxShape.circle,
+                          boxShadow: NeuShadows.inset(isDark: isDark),
                         ),
-                        child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 26),
+                        child: Icon(
+                          Icons.auto_awesome_rounded,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 14),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'AI Real-Time Freight Matcher',
+                              'AI Aqlli Yuk Tanlash Tizimi',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              'Analyzes radius, vehicle type, payload & optimal rate/km',
-                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                              'Masofa, transport turi, hajm va optimal tarifni real vaqtda tahlil qiladi',
+                              style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                fontSize: 11,
+                              ),
                             ),
                           ],
                         ),
@@ -299,7 +329,7 @@ class _AILoadMatcherScreenState extends State<AILoadMatcherScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${shp.cargoType.tr()} • ${shp.weightTons}t • ${item.distanceFromDriverKm} km pickup distance',
+                          '${shp.cargoType.tr()} • ${shp.weightTons}t${item.distanceFromDriverKm != null ? " • ${item.distanceFromDriverKm} km masofa" : ""}',
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,

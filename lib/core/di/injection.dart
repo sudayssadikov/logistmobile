@@ -87,7 +87,7 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<IWalletRepository>(
     () => WalletRepositoryImpl(getIt<DioClient>()),
-  );
+  ); 
   getIt.registerLazySingleton<ITrackingRepository>(
     () => TrackingRepositoryImpl(getIt<DioClient>()),
   );

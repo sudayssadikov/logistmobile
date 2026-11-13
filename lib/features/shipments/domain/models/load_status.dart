@@ -148,4 +148,8 @@ enum LoadStatus {
         return 'actions.orderArchived'.tr();
     }
   }
+
+  static const LoadStatus deliveredPodUploaded = LoadStatus.delivered;
+  bool get isFinal => this == LoadStatus.delivered || this == LoadStatus.completedPayoutReleased;
+  String nextActionText(UserRole role) => getActionTitle(role);
 }

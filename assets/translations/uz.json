@@ -58,10 +58,10 @@
     "emailOrUsername": "Elektron pochta yoki login",
     "password": "Parol",
     "phoneNumber": "Telefon raqami",
-    "smsCode": "SMS kodi (Demo: 1234)",
+    "smsCode": "SMS tasdiqlash kodi",
     "signInAs": "sifatida kirish",
     "biometricSignIn": "Biometrika orqali kirish (FaceID / Barmoq izi)",
-    "demoHint": "Demo muhit: Barcha rollar bo'yicha to'ldirilgan ma'lumotlar bilan tezkor kirishingiz mumkin.",
+    "demoHint": "Xavfsizlik: Telefon raqamingizga yuborilgan tasdiqlash kodini kiriting.",
     "sendCode": "Tasdiqlash kodini yuborish",
     "verifyAndSignIn": "Tasdiqlash va tizimga kirish",
     "resendCode": "Kodni qayta yuborish",
@@ -454,5 +454,22 @@
     "endCall": "Qo'ng'iroqni yakunlash",
     "accept": "Qabul qilish",
     "decline": "Rad etish"
+  },
+  "bidding": {
+    "title": "Yuk bo'yicha takliflar",
+    "negotiateRate": "Narx taklif qilish",
+    "yourOffer": "Sizning taklifingiz (UZS)",
+    "offerComment": "Izoh yoki shartlar",
+    "submitOffer": "Taklifni yuborish",
+    "counterBack": "Qarshi taklif",
+    "acceptOffer": "Qabul qilish",
+    "statusPending": "Kutilmoqda",
+    "statusAccepted": "Qabul qilindi",
+    "statusDeclined": "Rad etildi",
+    "statusCountered": "Qarshi taklif",
+    "platformFee": "Platforma xizmat haqi",
+    "carrierWillReceive": "Sizga o'tadi (Toza daromad)",
+    "shipperPays": "Yuk egasi to'laydi",
+    "feeTierNote": "Belgilangan komissiya faqat yuk yetkazilgach olinadi"
   }
 }

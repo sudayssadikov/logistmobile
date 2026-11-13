@@ -11,6 +11,7 @@ from app.services.sos_service import SosService
 router = APIRouter(prefix="/sos", tags=["SOS Roadside Emergency"])
 
 @router.get("/providers", response_model=ApiResponse[List[NearbySosProvider]])
+@router.get("/nearby", response_model=ApiResponse[List[NearbySosProvider]])
 async def get_nearby_providers(
     lat: float = Query(41.2995, description="Driver latitude"),
     lng: float = Query(69.2401, description="Driver longitude"),
@@ -21,6 +22,7 @@ async def get_nearby_providers(
     return ApiResponse(data=results)
 
 @router.post("/trigger", response_model=ApiResponse[SosRequestResponse])
+@router.post("/alert", response_model=ApiResponse[SosRequestResponse])
 async def trigger_sos(
     req: TriggerSosRequest,
     current_user: User = Depends(get_current_user),

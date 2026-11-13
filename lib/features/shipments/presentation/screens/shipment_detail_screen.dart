@@ -159,6 +159,42 @@ class ShipmentDetailScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             const Divider(),
+                            Builder(builder: (context) {
+                              final role = context.watch<AuthBloc>().state.user?.role;
+                              if (role == UserRole.carrier || role == UserRole.driver) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8, bottom: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? AppColors.darkSurface : AppColors.lightSurfaceElevated,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('bidding.platformFee'.tr(), style: const TextStyle(fontSize: 10, color: AppColors.rose, fontWeight: FontWeight.w600)),
+                                            Text('- ${currencyFormatter.format(shipment.effectiveCommission)} UZS', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.rose)),
+                                          ],
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Text('bidding.carrierWillReceive'.tr(), style: const TextStyle(fontSize: 10, color: AppColors.emerald, fontWeight: FontWeight.w700)),
+                                            Text('${currencyFormatter.format(shipment.effectiveCarrierPayout)} UZS', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.emerald)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            }),
                             const SizedBox(height: 10),
                             Row(
                               children: [

@@ -127,27 +127,61 @@ class _AdminControlCenterScreenState extends State<AdminControlCenterScreen> {
                       NavigationRailDestination(icon: Icon(Icons.security_outlined), selectedIcon: Icon(Icons.security_rounded), label: Text('Audit')),
                     ],
                   ),
-                  const VerticalDivider(thickness: 1, width: 1),
+                  const VerticalDivider(thickness: 0.8, width: 1),
                   Expanded(child: _views[_currentIndex]),
                 ],
               )
-            : _views[_currentIndex],
-        bottomNavigationBar: !isTabletOrDesktop
-            ? BottomNavigationBar(
-                currentIndex: _currentIndex,
-                type: BottomNavigationBarType.fixed,
-                onTap: (index) => setState(() => _currentIndex = index),
-                items: const [
-                  BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard_rounded), label: 'Boshqaruv'),
-                  BottomNavigationBarItem(icon: Icon(Icons.verified_user_outlined), activeIcon: Icon(Icons.verified_user_rounded), label: 'KYC'),
-                  BottomNavigationBarItem(icon: Icon(Icons.people_outline_rounded), activeIcon: Icon(Icons.people_rounded), label: 'A\'zolar'),
-                  BottomNavigationBarItem(icon: Icon(Icons.map_outlined), activeIcon: Icon(Icons.map_rounded), label: 'Radar'),
-                  BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), activeIcon: Icon(Icons.account_balance_wallet_rounded), label: 'Eskrou'),
-                  BottomNavigationBarItem(icon: Icon(Icons.gavel_outlined), activeIcon: Icon(Icons.gavel_rounded), label: 'Arbitraj'),
-                  BottomNavigationBarItem(icon: Icon(Icons.security_outlined), activeIcon: Icon(Icons.security_rounded), label: 'Audit'),
+            : Column(
+                children: [
+                  // Modern Apple Keynote Horizontal Pill Tabs
+                  Container(
+                    height: 44,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _titles.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final isSelected = _currentIndex == index;
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        final tabLabels = ['Boshqaruv', 'KYC', 'A\'zolar', 'Radar', 'Eskrou', 'Arbitraj', 'Audit'];
+                        return GestureDetector(
+                          onTap: () => setState(() => _currentIndex = index),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? (isDark ? Colors.white : AppColors.primary)
+                                  : (isDark ? AppColors.darkSurfacePressed : AppColors.lightSurfacePressed),
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(
+                                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                tabLabels[index],
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? (isDark ? Colors.black : Colors.white)
+                                      : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Expanded(child: _views[_currentIndex]),
                 ],
-              )
-            : null,
+              ),
       ),
     );
   }

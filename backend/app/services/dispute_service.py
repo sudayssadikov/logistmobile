@@ -109,19 +109,30 @@ class DisputeService:
         )
         self.session.add(t)
 
-        # If refund processed, refund escrow back to claimant wallet
-        if req.status == DisputeStatus.REFUND_PROCESSED and req.refund_amount:
-            wallet = await self.wallet_repo.get_by_user_id_for_update(d.claimant_id)
-            if wallet:
-                wallet.available_balance += req.refund_amount
-                txn = LedgerTransaction(
-                    wallet_id=wallet.id,
-                    type="refund",
-                    title="Dispute Arbitration Refund",
-                    tracking_code=d.tracking_code,
-                    amount=req.refund_amount,
+        # If refund processed in favor of Shipper: full refund back to Shipper, zero commission deducted
+        if req.status == DisputeStatus.REFUND_PROCESSED:
+            from app.services.escrow_service import EscrowService
+            escrow_svc = EscrowService(self.session)
+            try:
+                await escrow_svc.refund_escrow(
+                    shipment_id=d.shipment_id,
+                    authorized_by_user_id=admin_user_id,
+                    reason=f"Dispute {d.id} resolved in favor of Shipper: {req.resolution_message}",
                 )
-                self.session.add(txn)
+            except Exception:
+                # Fallback directly to claimant wallet if no active escrow hold
+                if req.refund_amount:
+                    wallet = await self.wallet_repo.get_by_user_id_for_update(d.claimant_id)
+                    if wallet:
+                        wallet.available_balance += req.refund_amount
+                        txn = LedgerTransaction(
+                            wallet_id=wallet.id,
+                            type="refund",
+                            title="Dispute Arbitration Refund",
+                            tracking_code=d.tracking_code,
+                            amount=req.refund_amount,
+                        )
+                        self.session.add(txn)
 
         await self.audit_repo.log_event(
             action=AuditAction.DISPUTE_RESOLVED.value,

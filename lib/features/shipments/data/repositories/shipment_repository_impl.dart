@@ -17,88 +17,61 @@ class ShipmentRepositoryImpl implements IShipmentRepository {
     String? searchQuery,
     LoadStatus? filterStatus,
   }) async {
-    if (_dioClient != null) {
-      try {
-        final queryParams = <String, dynamic>{};
-        if (filterStatus != null) queryParams['status'] = filterStatus.name;
-        if (searchQuery != null && searchQuery.isNotEmpty) queryParams['search'] = searchQuery;
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
+    }
+    try {
+      final queryParams = <String, dynamic>{};
+      if (filterStatus != null) queryParams['status'] = filterStatus.name;
+      if (searchQuery != null && searchQuery.isNotEmpty) queryParams['search'] = searchQuery;
 
-        final response = await _dioClient!.get('/shipments', queryParameters: queryParams);
-        if (response.statusCode == 200 && response.data != null) {
-          final List rawList = response.data['data'] ?? [];
-          final items = rawList.map((e) => ShipmentModel.fromJson(e)).toList();
-          if (items.isNotEmpty) {
-            _shipments.clear();
-            _shipments.addAll(items);
-            return ApiSuccess(items);
-          }
-        }
-      } catch (_) {
-        // Fallback to local memory
+      final response = await _dioClient!.get('/shipments', queryParameters: queryParams);
+      if (response.statusCode == 200 && response.data != null) {
+        final List rawList = response.data['data'] ?? [];
+        final items = rawList.map((e) => ShipmentModel.fromJson(e as Map<String, dynamic>)).toList();
+        _shipments.clear();
+        _shipments.addAll(items);
+        return ApiSuccess(items);
       }
+      return ApiFailure(message: response.data?['message'] ?? 'Yuklar ro\'yxatini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
     }
-
-    await Future.delayed(const Duration(milliseconds: 150));
-    var list = List<ShipmentModel>.from(_shipments);
-
-    if (filterStatus != null) {
-      list = list.where((e) => e.status == filterStatus).toList();
-    }
-
-    if (searchQuery != null && searchQuery.isNotEmpty) {
-      final q = searchQuery.toLowerCase();
-      list = list.where((e) {
-        return e.trackingCode.toLowerCase().contains(q) ||
-            e.cargoTitle.toLowerCase().contains(q) ||
-            e.origin.city.toLowerCase().contains(q) ||
-            e.destination.city.toLowerCase().contains(q);
-      }).toList();
-    }
-
-    return ApiSuccess(list);
   }
 
   @override
   Future<ApiResult<ShipmentModel>> getShipmentById(String id) async {
-    if (_dioClient != null) {
-      try {
-        final response = await _dioClient!.get('/shipments/$id');
-        if (response.statusCode == 200 && response.data != null) {
-          final item = ShipmentModel.fromJson(response.data['data']);
-          return ApiSuccess(item);
-        }
-      } catch (_) {
-        // Fallback
-      }
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
     }
-
-    await Future.delayed(const Duration(milliseconds: 100));
     try {
-      final item = _shipments.firstWhere((e) => e.id == id);
-      return ApiSuccess(item);
-    } catch (_) {
-      return const ApiFailure(message: 'Shipment not found.');
+      final response = await _dioClient!.get('/shipments/$id');
+      if (response.statusCode == 200 && response.data != null) {
+        final item = ShipmentModel.fromJson(response.data['data']);
+        return ApiSuccess(item);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Yuk ma\'lumotlarini yuklab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Serverga ulanishda xatolik: ${e.toString()}');
     }
   }
 
   @override
   Future<ApiResult<ShipmentModel>> createShipment(ShipmentModel shipment) async {
-    if (_dioClient != null) {
-      try {
-        final response = await _dioClient!.post('/shipments', data: shipment.toJson());
-        if (response.statusCode == 200 && response.data != null) {
-          final created = ShipmentModel.fromJson(response.data['data']);
-          _shipments.insert(0, created);
-          return ApiSuccess(created);
-        }
-      } catch (_) {
-        // Fallback
-      }
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
     }
-
-    await Future.delayed(const Duration(milliseconds: 200));
-    _shipments.insert(0, shipment);
-    return ApiSuccess(shipment);
+    try {
+      final response = await _dioClient!.post('/shipments', data: shipment.toJson());
+      if ((response.statusCode == 200 || response.statusCode == 201) && response.data != null) {
+        final created = ShipmentModel.fromJson(response.data['data']);
+        _shipments.insert(0, created);
+        return ApiSuccess(created);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Yukni e\'lon qilib bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Yuk yaratishda xatolik: ${e.toString()}');
+    }
   }
 
   @override
@@ -107,36 +80,24 @@ class ShipmentRepositoryImpl implements IShipmentRepository {
     required LoadStatus nextStatus,
     required UserRole currentRole,
   }) async {
-    if (_dioClient != null) {
-      try {
-        final response = await _dioClient!.patch(
-          '/shipments/$shipmentId/status',
-          data: {'status': nextStatus.name},
-        );
-        if (response.statusCode == 200 && response.data != null) {
-          final updated = ShipmentModel.fromJson(response.data['data']);
-          final index = _shipments.indexWhere((e) => e.id == shipmentId);
-          if (index != -1) _shipments[index] = updated;
-          return ApiSuccess(updated);
-        }
-      } catch (_) {
-        // Fallback
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.patch(
+        '/shipments/$shipmentId/status',
+        data: {'status': nextStatus.name},
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final updated = ShipmentModel.fromJson(response.data['data']);
+        final index = _shipments.indexWhere((e) => e.id == shipmentId);
+        if (index != -1) _shipments[index] = updated;
+        return ApiSuccess(updated);
       }
+      return ApiFailure(message: response.data?['message'] ?? 'Holatni yangilab bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Xatolik: ${e.toString()}');
     }
-
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _shipments.indexWhere((e) => e.id == shipmentId);
-    if (index == -1) {
-      return const ApiFailure(message: 'Shipment not found.');
-    }
-
-    final current = _shipments[index];
-    final updated = current.copyWith(
-      status: nextStatus,
-      isEscrowFunded: nextStatus.index >= LoadStatus.escrowFunded.index ? true : current.isEscrowFunded,
-    );
-    _shipments[index] = updated;
-    return ApiSuccess(updated);
   }
 
   @override
@@ -144,32 +105,22 @@ class ShipmentRepositoryImpl implements IShipmentRepository {
     required String shipmentId,
     required BidModel bid,
   }) async {
-    if (_dioClient != null) {
-      try {
-        final response = await _dioClient!.post(
-          '/shipments/$shipmentId/bids',
-          data: bid.toJson(),
-        );
-        if (response.statusCode == 200 && response.data != null) {
-          final updated = ShipmentModel.fromJson(response.data['data']);
-          return ApiSuccess(updated);
-        }
-      } catch (_) {
-        // Fallback
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.post(
+        '/shipments/$shipmentId/bids',
+        data: bid.toJson(),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final updated = ShipmentModel.fromJson(response.data['data']);
+        return ApiSuccess(updated);
       }
+      return ApiFailure(message: response.data?['message'] ?? 'Taklifni yuborib bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Taklif yuborishda xatolik: ${e.toString()}');
     }
-
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _shipments.indexWhere((e) => e.id == shipmentId);
-    if (index == -1) {
-      return const ApiFailure(message: 'Shipment not found.');
-    }
-
-    final current = _shipments[index];
-    final updatedBids = List<BidModel>.from(current.bids)..add(bid);
-    final updated = current.copyWith(bids: updatedBids);
-    _shipments[index] = updated;
-    return ApiSuccess(updated);
   }
 
   @override
@@ -177,33 +128,46 @@ class ShipmentRepositoryImpl implements IShipmentRepository {
     required String shipmentId,
     required String bidId,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _shipments.indexWhere((e) => e.id == shipmentId);
-    if (index == -1) {
-      return const ApiFailure(message: 'Shipment not found.');
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
     }
-
-    final current = _shipments[index];
-    final bid = current.bids.firstWhere((b) => b.id == bidId, orElse: () => current.bids.first);
-
-    final updated = current.copyWith(
-      carrierId: bid.carrierId,
-      carrierName: bid.carrierName,
-      driverName: bid.driverName,
-      vehiclePlate: '${bid.plateNumber} (${bid.vehicleModel})',
-      price: bid.bidAmount,
-      status: LoadStatus.carrierAssigned,
-    );
-    _shipments[index] = updated;
-    return ApiSuccess(updated);
+    try {
+      final response = await _dioClient!.post('/shipments/$shipmentId/bids/$bidId/accept');
+      if (response.statusCode == 200 && response.data != null) {
+        final updated = ShipmentModel.fromJson(response.data['data']);
+        final index = _shipments.indexWhere((e) => e.id == shipmentId);
+        if (index != -1) _shipments[index] = updated;
+        return ApiSuccess(updated);
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Taklifni qabul qilib bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Taklifni qabul qilishda xatolik: ${e.toString()}');
+    }
   }
 
   @override
   Future<ApiResult<ShipmentModel>> fundEscrow(String shipmentId) async {
-    return advanceStatus(
-      shipmentId: shipmentId,
-      nextStatus: LoadStatus.escrowFunded,
-      currentRole: UserRole.shipper,
-    );
+    if (_dioClient == null) {
+      return const ApiFailure(message: 'Server bilan aloqa mavjud emas');
+    }
+    try {
+      final response = await _dioClient!.post(
+        '/escrow/fund',
+        data: {
+          'shipmentId': shipmentId,
+          'idempotencyKey': 'escrow_${DateTime.now().millisecondsSinceEpoch}',
+        },
+      );
+      if (response.statusCode == 200) {
+        return await advanceStatus(
+          shipmentId: shipmentId,
+          nextStatus: LoadStatus.escrowFunded,
+          currentRole: UserRole.shipper,
+        );
+      }
+      return ApiFailure(message: response.data?['message'] ?? 'Eskrou mablag\'ini muzlatib bo\'lmadi');
+    } catch (e) {
+      return ApiFailure(message: 'Eskrou to\'lovida xatolik: ${e.toString()}');
+    }
   }
 }

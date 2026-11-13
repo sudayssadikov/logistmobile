@@ -37,9 +37,9 @@ class NavigationState extends Equatable {
     this.currentStepIndex = 0,
     this.maneuvers = const [],
     this.voiceGuidanceEnabled = true,
-    this.currentSpeedKmh = 76.0,
-    this.remainingDistanceKm = 142.5,
-    this.remainingMinutes = 115,
+    this.currentSpeedKmh = 0.0,
+    this.remainingDistanceKm = 0.0,
+    this.remainingMinutes = 0,
     this.spokenAlert,
   });
 

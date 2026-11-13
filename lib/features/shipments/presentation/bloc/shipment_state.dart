@@ -53,4 +53,6 @@ class ShipmentState extends Equatable {
         errorMessage,
         successMessage,
       ];
+
+  bool get isLoading => status == ShipmentStateStatus.loading;
 }

@@ -63,9 +63,9 @@ class CallService:
 
         call.status = req.status.value
         now = datetime.now(timezone.utc)
-        if req.status == CallStatus.CONNECTED:
+        if req.status == CallStatus.ACTIVE:
             call.connected_at = now
-        elif req.status in [CallStatus.ENDED, CallStatus.REJECTED, CallStatus.MISSED]:
+        elif req.status in [CallStatus.ENDED, CallStatus.DECLINED, CallStatus.MISSED]:
             call.ended_at = now
             if req.duration_seconds is not None:
                 call.duration_seconds = req.duration_seconds

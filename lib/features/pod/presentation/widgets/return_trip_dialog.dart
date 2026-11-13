@@ -55,33 +55,39 @@ class ReturnTripDialog extends StatelessWidget {
             const SizedBox(height: 18),
 
             // AI Return Trip Recommendation Card
-            Container(
+            // AI Return Trip Recommendation Card (Neumorphic)
+            NeuCard(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF065F46), Color(0xFF047857)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
+              borderRadius: 16,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.autorenew_rounded, color: Colors.white, size: 18),
-                      SizedBox(width: 6),
+                      Icon(
+                        Icons.autorenew_rounded,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
                       Text(
                         'BO\'SH QAYTMANG! (AI Return Match)',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Qurilish materiallari & Keramik plitalar',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -89,11 +95,18 @@ class ReturnTripDialog extends StatelessWidget {
                     children: [
                       Text(
                         '$destinationCity ➔ $originCity (20t)',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: TextStyle(
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          fontSize: 12,
+                        ),
                       ),
-                      const Text(
+                      Text(
                         '12,800,000 UZS',
-                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
