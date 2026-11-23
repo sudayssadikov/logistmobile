@@ -18,6 +18,7 @@ import '../features/tracking/presentation/bloc/tracking_bloc.dart';
 import '../features/tracking/presentation/bloc/navigation_bloc.dart';
 import '../features/sos/presentation/bloc/sos_bloc.dart';
 import '../features/wallet_escrow/presentation/bloc/wallet_bloc.dart';
+import '../features/driver/presentation/bloc/driver_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
@@ -73,6 +74,9 @@ class LogiFlowApp extends StatelessWidget {
         ),
         BlocProvider<NotificationBloc>(
           create: (_) => getIt<NotificationBloc>(),
+        ),
+        BlocProvider<DriverBloc>(
+          create: (_) => getIt<DriverBloc>(),
         ),
       ],
       child: BlocBuilder<LocalizationBloc, LocalizationState>(

@@ -10,6 +10,15 @@ class ChatRepository(BaseRepository[ChatChannel]):
     def __init__(self, session: AsyncSession):
         super().__init__(ChatChannel, session)
 
+    async def get_by_id(self, id: str) -> Optional[ChatChannel]:
+        stmt = (
+            select(ChatChannel)
+            .options(selectinload(ChatChannel.messages), selectinload(ChatChannel.shipment))
+            .where(ChatChannel.id == id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def get_by_shipment_id(self, shipment_id: str) -> Optional[ChatChannel]:
         stmt = (
             select(ChatChannel)

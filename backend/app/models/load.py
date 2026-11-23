@@ -48,8 +48,24 @@ class Load(Base, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     photos_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
 
-    # Relationship
+    # Lifecycle & Carrier Execution Fields
+    tracking_code: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    carrier_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("users.id"), nullable=True, index=True)
+    driver_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("users.id"), nullable=True)
+    driver_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    driver_phone: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    vehicle_plate: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    is_escrow_funded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    commission_amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    carrier_payout: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    eta: Mapped[Optional[str]] = mapped_column(String(128), default="In Calculation", nullable=True)
+    pod_signature_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+
+    # Relationships
     shipper: Mapped["User"] = relationship("User", foreign_keys=[shipper_id])
+    carrier: Mapped[Optional["User"]] = relationship("User", foreign_keys=[carrier_id])
+    driver: Mapped[Optional["User"]] = relationship("User", foreign_keys=[driver_id])
+    bids: Mapped[List["Bid"]] = relationship("Bid", back_populates="load", cascade="all, delete-orphan", foreign_keys="Bid.load_id")
 
     @property
     def photos(self) -> List[str]:

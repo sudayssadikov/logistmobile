@@ -87,7 +87,7 @@ class _ShipperMyLoadsScreenState extends State<ShipperMyLoadsScreen> {
             onPressed: () => context.push('/notifications'),
           ),
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryBlue),
+            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
             tooltip: 'shipments.postNewLoad'.tr(),
             onPressed: () => context.push('/create-load'),
           ),
@@ -114,7 +114,7 @@ class _ShipperMyLoadsScreenState extends State<ShipperMyLoadsScreen> {
                           setState(() => _selectedFilterIndex = index);
                         }
                       },
-                      selectedColor: AppColors.primaryBlue,
+                      selectedColor: AppColors.primary,
                       backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
                       labelStyle: TextStyle(
                         fontSize: 13,
@@ -126,7 +126,7 @@ class _ShipperMyLoadsScreenState extends State<ShipperMyLoadsScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
-                          color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                          color: isSelected ? AppColors.primary : Colors.transparent,
                         ),
                       ),
                     ),

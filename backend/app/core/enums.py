@@ -27,8 +27,11 @@ class LoadStatus(str, enum.Enum):
     GOING_TO_PICKUP = "goingToPickup"
     ARRIVED_AT_PICKUP = "arrivedAtPickup"
     LOADING = "loading"
+    IN_TRANSIT_CAMEL = "inTransit"
     ARRIVED_AT_DESTINATION = "arrivedAtDestination"
     UNLOADING = "unloading"
+    DELIVERED_LOWER = "delivered"
+    CANCELLED_LOWER = "cancelled"
     COMPLETED_PAYOUT_RELEASED = "completedPayoutReleased"
     DISPUTED = "disputed"
 

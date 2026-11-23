@@ -63,6 +63,11 @@ enum LoadStatus {
     defaultLabel: 'Completed & Paid',
     defaultDesc: 'Escrow released payment directly to carrier wallet.',
     color: AppColors.emerald,
+  ),
+  cancelled(
+    defaultLabel: 'Cancelled',
+    defaultDesc: 'Shipment was cancelled and escrow was refunded.',
+    color: AppColors.rose,
   );
 
   final String defaultLabel;
@@ -88,7 +93,10 @@ enum LoadStatus {
 
   /// Get the next logical state in the shipment state machine
   LoadStatus? get nextStatus {
-    if (index < LoadStatus.values.length - 1) {
+    if (this == LoadStatus.cancelled || this == LoadStatus.completedPayoutReleased) {
+      return null;
+    }
+    if (index < LoadStatus.values.length - 2) {
       return LoadStatus.values[index + 1];
     }
     return null;
@@ -113,6 +121,7 @@ enum LoadStatus {
       case LoadStatus.delivered:
         return role == UserRole.driver;
       case LoadStatus.completedPayoutReleased:
+      case LoadStatus.cancelled:
         return false;
     }
   }
@@ -142,6 +151,7 @@ enum LoadStatus {
       case LoadStatus.delivered:
         return 'actions.releaseEscrowPayout'.tr();
       case LoadStatus.completedPayoutReleased:
+      case LoadStatus.cancelled:
         return 'actions.orderArchived'.tr();
     }
   }

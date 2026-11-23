@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.api.v1.auth import router as auth_router
 from app.api.v1.users import router as users_router
 from app.api.v1.loads import router as loads_router
+from app.api.v1.driver import router as driver_router
 from app.api.v1.shipments import router as shipments_router
 from app.api.v1.tracking import router as tracking_router
 from app.api.v1.wallet import router as wallet_router
@@ -21,6 +22,7 @@ api_v1_router = APIRouter()
 api_v1_router.include_router(auth_router)
 api_v1_router.include_router(users_router)
 api_v1_router.include_router(loads_router)
+api_v1_router.include_router(driver_router)
 api_v1_router.include_router(shipments_router)
 api_v1_router.include_router(tracking_router)
 api_v1_router.include_router(wallet_router)

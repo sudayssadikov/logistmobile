@@ -281,14 +281,22 @@ class ProfileScreen extends StatelessWidget {
                       trailing: const Icon(Icons.chevron_right_rounded, size: 20),
                       onTap: () => context.push('/calls/history'),
                     ),
-                    if (user.role == UserRole.driver)
+                    if (user.role == UserRole.driver) ...[
                       _SettingTile(
                         icon: Icons.local_shipping_outlined,
+                        title: 'Mashinam',
+                        subtitle: 'Yuk mashinasi parametrlarini boshqarish',
+                        trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+                        onTap: () => context.push('/driver/vehicle'),
+                      ),
+                      _SettingTile(
+                        icon: Icons.alt_route_rounded,
                         title: 'profile.fleetManagement'.tr(),
                         subtitle: 'profile.fleetManagementSub'.tr(),
                         trailing: const Icon(Icons.chevron_right_rounded, size: 20),
                         onTap: () => context.push('/fleet'),
                       ),
+                    ],
                     _SettingTile(
                       icon: Icons.gavel_rounded,
                       title: 'profile.disputesCenter'.tr(),

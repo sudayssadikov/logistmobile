@@ -174,7 +174,7 @@ class ChatService:
                     user_id=recipient_id,
                     title=f"Yangi xabar ({channel.tracking_code})",
                     body=f"{sender.full_name}: {snippet}",
-                    category=NotificationCategory.MESSAGES.value,
+                    category=NotificationCategory.SHIPMENTS.value,
                     action_route=f"/chat/{channel.id}",
                     is_read=False,
                 )

@@ -18,6 +18,7 @@ import '../../features/shipper/presentation/screens/shipper_create_load_screen.d
 import '../../features/shipper/presentation/screens/shipper_my_loads_screen.dart';
 import '../../features/driver/presentation/screens/driver_loads_feed_screen.dart';
 import '../../features/driver/presentation/screens/driver_my_trips_screen.dart';
+import '../../features/driver/presentation/screens/driver_vehicle_screen.dart';
 import '../../features/chat/presentation/screens/chat_conversation_screen.dart';
 import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/calls/presentation/screens/active_call_screen.dart';
@@ -188,6 +189,11 @@ class AppRouter {
           GoRoute(
             path: '/driver/profile',
             builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: '/driver/vehicle',
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => const DriverVehicleScreen(),
           ),
         ],
       ),

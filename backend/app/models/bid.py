@@ -9,7 +9,8 @@ class Bid(Base, TimestampMixin):
     __tablename__ = "bids"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=generate_uuid)
-    shipment_id: Mapped[str] = mapped_column(String(64), ForeignKey("shipments.id", ondelete="CASCADE"), nullable=False, index=True)
+    shipment_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("shipments.id", ondelete="CASCADE"), nullable=True, index=True)
+    load_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("loads.id", ondelete="CASCADE"), nullable=True, index=True)
     carrier_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id"), nullable=False, index=True)
     carrier_name: Mapped[str] = mapped_column(String(255), nullable=False)
     driver_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -21,7 +22,8 @@ class Bid(Base, TimestampMixin):
     carrier_rating: Mapped[float] = mapped_column(Float, default=5.0, nullable=False)
     is_accepted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    shipment: Mapped["Shipment"] = relationship("Shipment", back_populates="bids")
+    shipment: Mapped[Optional["Shipment"]] = relationship("Shipment", back_populates="bids")
+    load: Mapped[Optional["Load"]] = relationship("Load", back_populates="bids")
     carrier: Mapped["User"] = relationship("User")
     negotiation_steps: Mapped[List["NegotiationStep"]] = relationship("NegotiationStep", back_populates="bid", cascade="all, delete-orphan")
 

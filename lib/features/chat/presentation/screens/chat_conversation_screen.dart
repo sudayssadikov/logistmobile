@@ -10,6 +10,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../calls/domain/models/call_model.dart';
 import '../../../calls/presentation/bloc/call_bloc.dart';
 import '../../../calls/presentation/bloc/call_event.dart';
+import '../../../shipments/domain/models/load_status.dart';
 import '../../../shipments/domain/models/shipment_model.dart';
 import '../../../shipments/domain/repositories/shipment_repository.dart';
 import '../../domain/models/chat_message_model.dart';
@@ -239,8 +240,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.security_rounded, color: AppColors.amber),
               SizedBox(width: 8),
               Text('Xavfsiz aloqa'),

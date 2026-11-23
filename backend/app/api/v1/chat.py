@@ -31,6 +31,7 @@ async def get_channels(
     return ApiResponse(data=results)
 
 @router.get("/chat/channels/{channel_id}/messages", response_model=ApiResponse[List[ChatMessageModel]])
+@router.get("/chat/{channel_id}/messages", response_model=ApiResponse[List[ChatMessageModel]])
 @router.get("/chat/{channel_id}", response_model=ApiResponse[List[ChatMessageModel]])
 async def get_messages(
     channel_id: str,
@@ -42,6 +43,7 @@ async def get_messages(
     return ApiResponse(data=results)
 
 @router.post("/chat/channels/{channel_id}/messages", response_model=ApiResponse[ChatMessageModel])
+@router.post("/chat/{channel_id}/messages", response_model=ApiResponse[ChatMessageModel])
 @router.post("/chat/{channel_id}", response_model=ApiResponse[ChatMessageModel])
 async def send_message(
     channel_id: str,

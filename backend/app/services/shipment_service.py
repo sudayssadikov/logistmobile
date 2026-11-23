@@ -237,9 +237,11 @@ class ShipmentService:
             LoadStatus.ARRIVED_AT_PICKUP,
             LoadStatus.LOADING,
             LoadStatus.IN_TRANSIT,
+            LoadStatus.IN_TRANSIT_CAMEL,
             LoadStatus.ARRIVED_AT_DESTINATION,
             LoadStatus.UNLOADING,
             LoadStatus.DELIVERED,
+            LoadStatus.DELIVERED_LOWER,
         ]:
             if user_role not in [UserRole.DRIVER.value, SystemRole.ADMIN.value, SystemRole.SUPER_ADMIN.value]:
                 raise PermissionDeniedError("Only the assigned driver can update transit progress.")

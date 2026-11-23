@@ -48,6 +48,9 @@ import '../../features/wallet_escrow/presentation/bloc/wallet_bloc.dart';
 import '../../features/shipper/data/repositories/loads_repository_impl.dart';
 import '../../features/shipper/data/services/load_draft_service.dart';
 import '../../features/shipper/domain/repositories/loads_repository.dart';
+import '../../features/driver/data/repositories/driver_repository_impl.dart';
+import '../../features/driver/domain/repositories/driver_repository.dart';
+import '../../features/driver/presentation/bloc/driver_bloc.dart';
 import '../localization/app_localizations.dart';
 import '../map/map_provider.dart';
 import '../map/osm_map_provider.dart';
@@ -129,11 +132,15 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<IAdminRepository>(
     () => AdminRepositoryImpl(dioClient: getIt<DioClient>()),
   );
+  getIt.registerLazySingleton<IDriverRepository>(
+    () => DriverRepositoryImpl(getIt<DioClient>()),
+  );
 
   // Blocs
   getIt.registerLazySingleton<LocalizationBloc>(
     () => LocalizationBloc(storage: getIt<ILocalStorageService>())..add(LoadSavedLanguageEvent()),
   );
+  getIt.registerFactory<DriverBloc>(() => DriverBloc(getIt<IDriverRepository>()));
   getIt.registerFactory<AdminDashboardBloc>(
     () => AdminDashboardBloc(repository: getIt<IAdminRepository>()),
   );

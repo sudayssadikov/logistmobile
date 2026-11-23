@@ -105,7 +105,7 @@ class _DriverMyTripsScreenState extends State<DriverMyTripsScreen> {
                           setState(() => _selectedFilterIndex = index);
                         }
                       },
-                      selectedColor: AppColors.primaryBlue,
+                      selectedColor: AppColors.primary,
                       backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
                       labelStyle: TextStyle(
                         fontSize: 13,
@@ -117,7 +117,7 @@ class _DriverMyTripsScreenState extends State<DriverMyTripsScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
-                          color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                          color: isSelected ? AppColors.primary : Colors.transparent,
                         ),
                       ),
                     ),

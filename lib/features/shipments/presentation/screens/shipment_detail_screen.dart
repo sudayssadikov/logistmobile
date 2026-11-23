@@ -165,7 +165,6 @@ class ShipmentDetailScreen extends StatelessWidget {
                               final isReleased = shipment.status == LoadStatus.completedPayoutReleased;
                               final isCancelled = shipment.status == LoadStatus.cancelled;
                               final isHeld = shipment.isEscrowFunded && !isReleased && !isCancelled;
-                              final isPending = !shipment.isEscrowFunded && !isCancelled;
 
                               Color escrowColor = AppColors.amber;
                               String escrowTitle = 'Kutilmoqda';
@@ -178,7 +177,7 @@ class ShipmentDetailScreen extends StatelessWidget {
                                 escrowDesc = 'Pul xavfsiz saqlanmoqda. Yuk yetkazilgunga qadar platforma kafolatida.';
                                 escrowIcon = Icons.lock_rounded;
                               } else if (isReleased) {
-                                escrowColor = AppColors.primaryBlue;
+                                escrowColor = AppColors.primary;
                                 escrowTitle = 'Qo\'yib yuborildi';
                                 escrowDesc = 'To\'lov o\'tkazildi. Haydovchiga sof summa o\'tkazildi.';
                                 escrowIcon = Icons.check_circle_rounded;
@@ -294,11 +293,11 @@ class ShipmentDetailScreen extends StatelessWidget {
                             child: _QuickActionButton(
                               icon: Icons.chat_bubble_outline_rounded,
                               label: 'shipments.directChat'.tr(),
-                              accentColor: (shipment.carrierId == null && shipment.driverId == null)
+                              accentColor: shipment.carrierId == null
                                   ? (isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)
                                   : AppColors.indigo,
                               onTap: () {
-                                if (shipment.carrierId == null && shipment.driverId == null) {
+                                if (shipment.carrierId == null) {
                                   showDialog(
                                     context: context,
                                     builder: (ctx) => AlertDialog(
@@ -497,8 +496,8 @@ class ShipmentDetailScreen extends StatelessWidget {
                                           showDialog(
                                             context: context,
                                             builder: (ctx) => AlertDialog(
-                                              title: Row(
-                                                children: const [
+                                              title: const Row(
+                                                children: [
                                                   Icon(Icons.security_rounded, color: AppColors.amber),
                                                   SizedBox(width: 8),
                                                   Text('Xavfsiz aloqa'),
