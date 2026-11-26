@@ -153,7 +153,7 @@ Future<void> configureDependencies() async {
   getIt.registerFactory<AdminDisputesBloc>(
     () => AdminDisputesBloc(repository: getIt<IAdminRepository>()),
   );
-  getIt.registerFactory<AuthBloc>(() => AuthBloc(getIt<IAuthRepository>()));
+  getIt.registerLazySingleton<AuthBloc>(() => AuthBloc(getIt<IAuthRepository>()));
   getIt.registerFactory<ShipmentBloc>(() => ShipmentBloc(getIt<IShipmentRepository>()));
   getIt.registerFactory<WalletBloc>(() => WalletBloc(getIt<IWalletRepository>()));
   getIt.registerFactory<TrackingBloc>(() => TrackingBloc(getIt<ITrackingRepository>()));

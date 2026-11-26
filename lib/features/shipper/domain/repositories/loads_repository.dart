@@ -8,5 +8,24 @@ abstract class ILoadsRepository {
   });
 
   Future<ApiResult<CreatedLoadModel>> getLoadById(String id);
-}
 
+  Future<ApiResult<PaginatedLoadSummary>> getMyLoads({
+    required String statusGroup,
+    int page = 1,
+    int limit = 20,
+  });
+
+  Future<ApiResult<CreatedLoadModel>> updateLoad(
+    String id,
+    Map<String, dynamic> data,
+  );
+
+  Future<ApiResult<void>> cancelLoad(
+    String id, {
+    String? reason,
+  });
+
+  Future<ApiResult<CreatedLoadModel>> duplicateLoad(String id);
+
+  Future<ApiResult<List<LoadEventModel>>> getLoadEvents(String id);
+}

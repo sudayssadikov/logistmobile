@@ -88,5 +88,141 @@ class LoadsRepositoryImpl implements ILoadsRepository {
       return ApiFailure(message: 'Kutilmagan xatolik: ${e.toString()}');
     }
   }
-}
 
+  @override
+  Future<ApiResult<PaginatedLoadSummary>> getMyLoads({
+    required String statusGroup,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _dioClient.get(
+        '/loads/mine',
+        queryParameters: {
+          'status_group': statusGroup,
+          'page': page,
+          'limit': limit,
+        },
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return ApiSuccess(PaginatedLoadSummary.fromJson(data));
+      }
+      return const ApiFailure(message: 'Yuklar ro\'yxatini olishda xatolik yuz berdi.');
+    } on DioException catch (e) {
+      String? msg;
+      if (e.response?.data is Map) {
+        final resMap = e.response!.data as Map;
+        msg = resMap['message'] as String? ?? resMap['detail'] as String?;
+      }
+      return ApiFailure(message: msg ?? e.message ?? 'Server xatosi');
+    } catch (e) {
+      return ApiFailure(message: 'Kutilmagan xatolik: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResult<CreatedLoadModel>> updateLoad(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _dioClient.patch('/loads/$id', data: data);
+      if (response.statusCode == 200 && response.data != null) {
+        final resData = response.data['data'] as Map<String, dynamic>;
+        return ApiSuccess(CreatedLoadModel.fromJson(resData));
+      }
+      return const ApiFailure(message: 'Yukni yangilashda xatolik yuz berdi.');
+    } on DioException catch (e) {
+      String? msg;
+      if (e.response?.data is Map) {
+        final resMap = e.response!.data as Map;
+        msg = resMap['message'] as String? ?? resMap['detail'] as String?;
+      }
+      final statusCode = e.response?.statusCode;
+      return ApiFailure(
+        message: msg ?? e.message ?? 'Server xatosi',
+        statusCode: statusCode,
+      );
+    } catch (e) {
+      return ApiFailure(message: 'Kutilmagan xatolik: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResult<void>> cancelLoad(
+    String id, {
+    String? reason,
+  }) async {
+    try {
+      final response = await _dioClient.post(
+        '/loads/$id/cancel',
+        data: reason != null ? {'reason': reason} : null,
+      );
+      if (response.statusCode == 200) {
+        return const ApiSuccess(null);
+      }
+      return const ApiFailure(message: 'Yukni bekor qilishda xatolik yuz berdi.');
+    } on DioException catch (e) {
+      String? msg;
+      if (e.response?.data is Map) {
+        final resMap = e.response!.data as Map;
+        msg = resMap['message'] as String? ?? resMap['detail'] as String?;
+      }
+      return ApiFailure(
+        message: msg ?? e.message ?? 'Server xatosi',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      return ApiFailure(message: 'Kutilmagan xatolik: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResult<CreatedLoadModel>> duplicateLoad(String id) async {
+    try {
+      final response = await _dioClient.post('/loads/$id/duplicate');
+      if (response.statusCode == 201 && response.data != null) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return ApiSuccess(CreatedLoadModel.fromJson(data));
+      }
+      return const ApiFailure(message: 'Yukdan nusxa ko\'chirishda xatolik yuz berdi.');
+    } on DioException catch (e) {
+      String? msg;
+      if (e.response?.data is Map) {
+        final resMap = e.response!.data as Map;
+        msg = resMap['message'] as String? ?? resMap['detail'] as String?;
+      }
+      return ApiFailure(
+        message: msg ?? e.message ?? 'Server xatosi',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      return ApiFailure(message: 'Kutilmagan xatolik: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResult<List<LoadEventModel>>> getLoadEvents(String id) async {
+    try {
+      final response = await _dioClient.get('/loads/$id/events');
+      if (response.statusCode == 200 && response.data != null) {
+        final list = (response.data['data'] as List<dynamic>?)
+                ?.map((e) => LoadEventModel.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [];
+        return ApiSuccess(list);
+      }
+      return const ApiFailure(message: 'Yuk hodisalarini olishda xatolik yuz berdi.');
+    } on DioException catch (e) {
+      String? msg;
+      if (e.response?.data is Map) {
+        final resMap = e.response!.data as Map;
+        msg = resMap['message'] as String? ?? resMap['detail'] as String?;
+      }
+      return ApiFailure(message: msg ?? e.message ?? 'Server xatosi');
+    } catch (e) {
+      return ApiFailure(message: 'Kutilmagan xatolik: ${e.toString()}');
+    }
+  }
+}

@@ -66,6 +66,7 @@ class Load(Base, TimestampMixin):
     carrier: Mapped[Optional["User"]] = relationship("User", foreign_keys=[carrier_id])
     driver: Mapped[Optional["User"]] = relationship("User", foreign_keys=[driver_id])
     bids: Mapped[List["Bid"]] = relationship("Bid", back_populates="load", cascade="all, delete-orphan", foreign_keys="Bid.load_id")
+    events: Mapped[List["LoadEvent"]] = relationship("LoadEvent", back_populates="load", cascade="all, delete-orphan", order_by="desc(LoadEvent.created_at)")
 
     @property
     def photos(self) -> List[str]:

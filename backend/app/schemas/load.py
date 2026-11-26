@@ -100,3 +100,65 @@ class LoadResponse(BaseSchema):
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
 
+class UpdateLoadRequest(BaseSchema):
+    updated_at: datetime = Field(..., alias="updatedAt", description="Optimistic concurrency check timestamp")
+    cargo_name: Optional[str] = Field(None, min_length=2, max_length=255, alias="cargoName")
+    cargo_type: Optional[CargoType] = Field(None, alias="cargoType")
+    weight_tons: Optional[float] = Field(None, ge=0.1, le=60.0, alias="weightTons")
+    volume_m3: Optional[float] = Field(None, ge=0.1, le=200.0, alias="volumeM3")
+    truck_type: Optional[TruckType] = Field(None, alias="truckType")
+
+    from_lat: Optional[float] = Field(None, ge=-90.0, le=90.0, alias="fromLat")
+    from_lng: Optional[float] = Field(None, ge=-180.0, le=180.0, alias="fromLng")
+    from_address: Optional[str] = Field(None, min_length=3, max_length=512, alias="fromAddress")
+    from_region: Optional[str] = Field(None, min_length=2, max_length=128, alias="fromRegion")
+    from_city: Optional[str] = Field(None, min_length=2, max_length=128, alias="fromCity")
+
+    to_lat: Optional[float] = Field(None, ge=-90.0, le=90.0, alias="toLat")
+    to_lng: Optional[float] = Field(None, ge=-180.0, le=180.0, alias="toLng")
+    to_address: Optional[str] = Field(None, min_length=3, max_length=512, alias="toAddress")
+    to_region: Optional[str] = Field(None, min_length=2, max_length=128, alias="toRegion")
+    to_city: Optional[str] = Field(None, min_length=2, max_length=128, alias="toCity")
+
+    pickup_date: Optional[datetime] = Field(None, alias="pickupDate")
+    price_uzs: Optional[float] = Field(None, ge=0.0, alias="priceUzs")
+    price_negotiable: Optional[bool] = Field(None, alias="priceNegotiable")
+    description: Optional[str] = Field(None, max_length=500)
+    photos: Optional[List[str]] = Field(None, max_length=5)
+
+class CancelLoadRequest(BaseSchema):
+    reason: Optional[str] = Field(None, max_length=500)
+
+class LoadSummaryResponse(BaseSchema):
+    id: str
+    cargo_name: str = Field(..., alias="cargoName")
+    cargo_type: str = Field(..., alias="cargoType")
+    weight_tons: float = Field(..., alias="weightTons")
+    truck_type: str = Field(..., alias="truckType")
+    from_city: str = Field(..., alias="fromCity")
+    from_region: str = Field(..., alias="fromRegion")
+    to_city: str = Field(..., alias="toCity")
+    to_region: str = Field(..., alias="toRegion")
+    price_uzs: Optional[float] = Field(None, alias="priceUzs")
+    price_negotiable: bool = Field(..., alias="priceNegotiable")
+    status: str
+    pickup_date: datetime = Field(..., alias="pickupDate")
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
+
+class PaginatedLoadSummaryResponse(BaseSchema):
+    items: List[LoadSummaryResponse]
+    total: int
+    page: int
+    limit: int
+    pages: int
+
+class LoadEventResponse(BaseSchema):
+    id: str
+    load_id: str = Field(..., alias="loadId")
+    event_type: str = Field(..., alias="eventType")
+    actor_id: Optional[str] = Field(None, alias="actorId")
+    payload: dict
+    created_at: datetime = Field(..., alias="createdAt")
+
+

@@ -7,6 +7,8 @@ class AppTextField extends StatefulWidget {
   final String? errorText;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final TextInputAction? textInputAction;
   final TextInputType keyboardType;
   final bool isPassword;
   final bool autofocus;
@@ -23,6 +25,8 @@ class AppTextField extends StatefulWidget {
     this.errorText,
     this.controller,
     this.onChanged,
+    this.onSubmitted,
+    this.textInputAction,
     this.keyboardType = TextInputType.text,
     this.isPassword = false,
     this.autofocus = false,
@@ -78,6 +82,8 @@ class _AppTextFieldState extends State<AppTextField> {
             controller: widget.controller,
             focusNode: widget.focusNode,
             onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            textInputAction: widget.textInputAction,
             keyboardType: widget.keyboardType,
             obscureText: widget.isPassword ? _obscureText : false,
             autofocus: widget.autofocus,

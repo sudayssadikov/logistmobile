@@ -9,11 +9,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # Set test environment database
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["DEBUG"] = "true"
+os.environ["ENABLE_DEV_ENDPOINTS"] = "true"
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.config.settings import settings
+settings.ENABLE_DEV_ENDPOINTS = True
 
 from app.database.base import Base
 from app.database.session import get_async_db

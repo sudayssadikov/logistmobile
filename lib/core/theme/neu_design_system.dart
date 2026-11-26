@@ -59,6 +59,10 @@ class _SpringTouchState extends State<SpringTouch> with SingleTickerProviderStat
   }
 
   void _onTapUp(TapUpDetails _) {
+    _controller.reverse();
+  }
+
+  void _onTap() {
     if (widget.onTap != null) {
       _controller.reverse();
       widget.onTap?.call();
@@ -79,6 +83,7 @@ class _SpringTouchState extends State<SpringTouch> with SingleTickerProviderStat
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
+      onTap: _onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedBuilder(
         animation: _scaleAnimation,
@@ -341,19 +346,21 @@ class _NeuButtonState extends State<NeuButton> with SingleTickerProviderStateMix
     }
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTapDown: isEnabled
           ? (_) {
               HapticFeedback.selectionClick();
               _springController.forward();
             }
           : null,
-      onTapUp: isEnabled
-          ? (_) {
+      onTapUp: isEnabled ? (_) => _springController.reverse() : null,
+      onTapCancel: isEnabled ? () => _springController.reverse() : null,
+      onTap: isEnabled
+          ? () {
               _springController.reverse();
               widget.onPressed?.call();
             }
           : null,
-      onTapCancel: isEnabled ? () => _springController.reverse() : null,
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) => Transform.scale(

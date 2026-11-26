@@ -35,12 +35,46 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() {
     if (_useOtpMode) {
-      context.read<AuthBloc>().add(AuthSendOtpSubmitted(phone: _phoneOtpController.text));
+      final phone = _phoneOtpController.text.trim();
+      if (phone.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Iltimos, telefon raqamingizni kiriting'),
+            backgroundColor: AppColors.rose,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      context.read<AuthBloc>().add(AuthSendOtpSubmitted(phone: phone));
     } else {
+      final login = _loginController.text.trim();
+      final password = _passwordController.text;
+      if (login.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Iltimos, elektron pochta yoki loginni kiriting'),
+            backgroundColor: AppColors.rose,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      if (password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Iltimos, parolni kiriting'),
+            backgroundColor: AppColors.rose,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      debugPrint('[_handleLogin] Submitting login: $login, role: $_selectedRole');
       context.read<AuthBloc>().add(
             AuthLoginSubmitted(
-              emailOrPhone: _loginController.text,
-              password: _passwordController.text,
+              emailOrPhone: login,
+              password: password,
               role: _selectedRole,
             ),
           );
@@ -434,6 +468,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       hint: 'user@logiflow.uz',
                       controller: _loginController,
                       prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 14),
                     AppTextField(
@@ -442,6 +477,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       isPassword: true,
                       controller: _passwordController,
                       prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleLogin(),
                     ),
                   ] else ...[
                     AppTextField(
@@ -450,6 +487,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.phone,
                       controller: _phoneOtpController,
                       prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleLogin(),
                     ),
                   ],
                   const SizedBox(height: 24),

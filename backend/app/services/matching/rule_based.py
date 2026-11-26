@@ -136,7 +136,7 @@ class RuleBasedScorer(MatchScorer):
 
         # e) Price score (15 pts)
         if load.price_negotiable:
-            score += self.WEIGHT_PRICE * 0.6  # Negotiable gets neutral 60%
+            score += self.WEIGHT_PRICE * 0.5  # Negotiable gets neutral 50%
         elif load.price_uzs is not None:
             min_expected = preferences.min_price_uzs if (preferences and preferences.min_price_uzs) else None
             if min_expected and load.price_uzs >= min_expected:

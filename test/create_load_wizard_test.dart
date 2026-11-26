@@ -38,6 +38,7 @@ class MockLoadsRepository implements ILoadsRepository {
         pickupDate: draft.pickupDate ?? DateTime.now(),
         priceNegotiable: draft.priceNegotiable,
         createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       ),
     );
   }
@@ -45,6 +46,40 @@ class MockLoadsRepository implements ILoadsRepository {
   @override
   Future<ApiResult<CreatedLoadModel>> getLoadById(String id) async {
     return const ApiFailure<CreatedLoadModel>(message: 'Not found');
+  }
+
+  @override
+  Future<ApiResult<PaginatedLoadSummary>> getMyLoads({
+    required String statusGroup,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return const ApiSuccess(
+      PaginatedLoadSummary(items: [], total: 0, page: 1, limit: 20, pages: 0),
+    );
+  }
+
+  @override
+  Future<ApiResult<CreatedLoadModel>> updateLoad(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    return const ApiFailure<CreatedLoadModel>(message: 'Not implemented');
+  }
+
+  @override
+  Future<ApiResult<void>> cancelLoad(String id, {String? reason}) async {
+    return const ApiSuccess(null);
+  }
+
+  @override
+  Future<ApiResult<CreatedLoadModel>> duplicateLoad(String id) async {
+    return const ApiFailure<CreatedLoadModel>(message: 'Not implemented');
+  }
+
+  @override
+  Future<ApiResult<List<LoadEventModel>>> getLoadEvents(String id) async {
+    return const ApiSuccess([]);
   }
 }
 

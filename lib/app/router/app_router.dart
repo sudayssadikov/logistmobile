@@ -16,6 +16,8 @@ import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/shipper/presentation/screens/shipper_home_screen.dart';
 import '../../features/shipper/presentation/screens/shipper_create_load_screen.dart';
 import '../../features/shipper/presentation/screens/shipper_my_loads_screen.dart';
+import '../../features/shipper/presentation/screens/shipper_load_detail_screen.dart';
+import '../../features/shipper/presentation/screens/shipper_edit_load_screen.dart';
 import '../../features/driver/presentation/screens/driver_loads_feed_screen.dart';
 import '../../features/driver/presentation/screens/driver_my_trips_screen.dart';
 import '../../features/driver/presentation/screens/driver_vehicle_screen.dart';
@@ -190,15 +192,31 @@ class AppRouter {
             path: '/driver/profile',
             builder: (context, state) => const ProfileScreen(),
           ),
-          GoRoute(
-            path: '/driver/vehicle',
-            parentNavigatorKey: _rootNavigatorKey,
-            builder: (context, state) => const DriverVehicleScreen(),
-          ),
         ],
       ),
 
       // Deep Detail & Shared Modal Routes
+      GoRoute(
+        path: '/driver/vehicle',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DriverVehicleScreen(),
+      ),
+      GoRoute(
+        path: '/shipper/loads/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return ShipperLoadDetailScreen(loadId: id);
+        },
+      ),
+      GoRoute(
+        path: '/shipper/loads/:id/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return ShipperEditLoadScreen(loadId: id);
+        },
+      ),
       GoRoute(
         path: '/create-load',
         parentNavigatorKey: _rootNavigatorKey,

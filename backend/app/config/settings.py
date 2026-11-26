@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+    ENABLE_DEV_ENDPOINTS: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
@@ -82,5 +83,14 @@ class Settings(BaseSettings):
     @property
     def is_sqlite(self) -> bool:
         return "sqlite" in self.DATABASE_URL
+
+    @property
+    def resolved_database_url(self) -> str:
+        if self.DATABASE_URL.startswith("sqlite+aiosqlite:///./"):
+            backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            db_name = self.DATABASE_URL.replace("sqlite+aiosqlite:///./", "")
+            abs_path = os.path.join(backend_dir, db_name).replace("\\", "/")
+            return f"sqlite+aiosqlite:///{abs_path}"
+        return self.DATABASE_URL
 
 settings = Settings()

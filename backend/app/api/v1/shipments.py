@@ -145,7 +145,6 @@ async def counter_bid(
     result = await service.counter_bid(shipment_id, bid_id, current_user.id, current_user.role, req)
     return ApiResponse(data=result, message="Counter offer sent")
 
-@router.post("/loads/{shipment_id}/cancel", response_model=ApiResponse[ShipmentModel])
 @router.post("/shipments/{shipment_id}/cancel", response_model=ApiResponse[ShipmentModel])
 async def cancel_load(
     shipment_id: str,
@@ -173,7 +172,6 @@ async def cancel_load(
     return ApiResponse(data=updated, message="Shipment cancelled and escrow refunded to shipper")
 
 # AI Matcher
-@router.post("/loads/ai-match", response_model=ApiResponse[List[MatchedShipmentResponse]])
 @router.post("/shipments/ai-match", response_model=ApiResponse[List[MatchedShipmentResponse]])
 async def ai_match_loads(
     prefs: DriverPreferences,

@@ -5,6 +5,7 @@ from app.models.vehicle import Vehicle
 from app.models.driver import DriverProfile
 from app.models.shipment import Shipment, ShipmentStatusHistory
 from app.models.load import Load
+from app.models.load_event import LoadEvent
 from app.models.driver_vehicle import DriverVehicle, DriverPreferences
 from app.models.bid import Bid, NegotiationStep
 from app.models.tracking import TrackingData, TelemetryLog
@@ -32,6 +33,7 @@ __all__ = [
     "Shipment",
     "ShipmentStatusHistory",
     "Load",
+    "LoadEvent",
     "DriverVehicle",
     "DriverPreferences",
     "Bid",

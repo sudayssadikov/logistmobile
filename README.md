@@ -88,22 +88,39 @@ Hozirgi holatda backend'da Payme va Click integratsiyasi Sandbox/Mock rejimida s
 
 ---
 
+### 6. Yuklar Boshqaruvi va Tarixi (`loads` moduli - 3-qism)
+- **Yagona manba (Single source of truth):** Yangi yuk tizimi `loads` jadvaliga asoslangan. Eski `shipments` jadvallari bilan to'qnashuvlar to'liq bartaraf etilgan.
+- **Ruxsatlar va Holatlar Matritsasi:**
+  | Holat (`status`) | Ko'rish | Barcha maydonlarni tahrirlash | Cheklangan tahrir (izoh, soat) | Bekor qilish | Nusxa ko'chirish |
+  |---|---|---|---|---|---|
+  | `ACTIVE` | ✅ | ✅ | ✅ | ✅ | ✅ |
+  | `ASSIGNED` | ✅ | ❌ (409) | ✅ | ✅ | ✅ |
+  | `IN_TRANSIT` | ✅ | ❌ (409) | ❌ (409) | ❌ (409) | ✅ |
+  | `DELIVERED` | ✅ | ❌ (409) | ❌ (409) | ❌ (409) | ✅ |
+  | `CANCELLED` | ✅ | ❌ (409) | ❌ (409) | ❌ (409) | ✅ |
+- **Parallel tahrirdan himoya (Optimistic Locking):** Har bir PATCH so'rovida `updatedAt` tekshiriladi; agar yuk boshqa joyda o'zgartirilgan bo'lsa, 409 xatolik qaytariladi va foydalanuvchiga ma'lumotlarni yangilash taklif etiladi.
+- **Hodisalar jurnali (`load_events`):** Har bir yuk yaratilishi (`CREATED`), tahrirlanishi (`EDITED`), bekor qilinishi (`CANCELLED`) yoki nusxalanishi (`DUPLICATED`) vaqt tamg'asi va muallifi bilan saqlanadi.
+- **Dev-status endpointi:**
+  - `POST /api/v1/loads/{id}/dev-status` (body: `{"status": "ASSIGNED"}`) — qo'lda test qilish va statuslarni o'zgartirish uchun yordamchi endpoint. `ENVIRONMENT=production` bo'lganda avtomatik ravishda bloklanadi (403).
+
+---
+
 ## 🧪 Sinov Natijalari (Verification)
 
 Barcha backend va mobil testlar 100% yashil:
 
 ```bash
-# Backend testlari (22 ta test)
+# Backend testlari (25 ta test)
 pytest -v backend/tests
-# Natija: 22 passed, 7 warnings in 40.11s
+# Natija: 25 passed, 7 warnings in 30.19s
 
 # Flutter statik tahlili
 flutter analyze
 # Natija: No issues found! (0 errors, 0 warnings, 0 lints)
 
-# Flutter birlik va vidjet testlari (26 ta test)
+# Flutter birlik va vidjet testlari (36 ta test)
 flutter test
-# Natija: 00:04 +26: All tests passed!
+# Natija: 00:16 +36: All tests passed!
 ```
 
 ---
